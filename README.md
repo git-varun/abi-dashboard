@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# abi-dashboard
 
-## Getting Started
+A small Next.js + TypeScript dashboard for interacting with ABIs and on-chain simulation utilities.
 
-First, run the development server:
+Requirements
+- Node 18+ (or Bun). This project includes a `bun.lockb`, so Bun is a first-class option; npm/pnpm/yarn also work.
+- Recommended: TypeScript 5+, Next.js 16, React 19 (these are used in package.json).
+
+Quick start (preferred: Bun)
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+bun install
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Alternative (npm / pnpm / yarn)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+# or
+pnpm install
+pnpm dev
+# or
+yarn
+yarn dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Available scripts (from `package.json`)
+- `dev` — run the Next.js dev server (`next dev`)
+- `build` — build for production (`next build`)
+- `start` — run the production server (`next start`)
+- `lint` — run ESLint (consider using `eslint . --ext .ts,.tsx` for full project linting)
 
-## Learn More
+Notes & observations
+- Next and ESLint: `next` is pinned to `16.1.6` and `eslint-config-next` uses the same version — that keeps Next-specific lint rules aligned.
+  Example: `"next": "16.1.6"` and `"eslint-config-next": "16.1.6"` in `package.json`.
+- TypeScript config: `tsconfig.json` targets modern JS and uses `moduleResolution: "bundler"` and the Next plugin. This pairs well with TS 5+ and Bun.
+  Excerpt: `"moduleResolution": "bundler"` and `"jsx": "react-jsx"`.
+- Next config enables the React compiler: `reactCompiler: true` in `next.config.ts`.
+- PostCSS/Tailwind: `postcss.config.mjs` uses the `@tailwindcss/postcss` plugin which integrates Tailwind into Next's CSS pipeline.
+  Excerpt: `plugins: { "@tailwindcss/postcss": {} }`.
+- Dev tooling: there is a `bun.lockb` at the repo root — when using Bun, prefer `bun install` to honor that lockfile.
 
-To learn more about Next.js, take a look at the following resources:
+Suggestions
+- Update the `lint` script to lint the project root, e.g.:
+  `"lint": "eslint . --ext .ts,.tsx"`
+- Consider adding a `format` script if using Prettier, and a `check` script for TypeScript type checks (`tsc -p tsconfig.json --noEmit`).
+- Double-check optional packages (for example, `radix-ui`) to ensure package names match published packages.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+If you want, I can apply the suggested `lint` script change and add a short `CONTRIBUTING.md` with development conventions.
