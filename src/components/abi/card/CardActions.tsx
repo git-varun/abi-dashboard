@@ -15,10 +15,10 @@ export const CardActions = ({isWrite, isLoading, onAction, disabled}: CardAction
         <Button
             onClick={onAction}
             disabled={isLoading || disabled}
-            className={`h-11 w-full font-black uppercase tracking-tighter transition-all active:scale-95 ${
+            className={`h-11 w-full font-black uppercase tracking-tighter transition-all border-2 border-black neo-shadow active:shadow-none active:translate-y-0.5 ${
                 isWrite
-                    ? "bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-900/20"
-                    : "bg-white text-black hover:bg-zinc-200"
+                    ? "bg-[#c3f400] text-black hover:bg-[#abd600]"
+                    : "bg-black text-white hover:bg-[#0046dd]"
             }`}
         >
             {isLoading ? (

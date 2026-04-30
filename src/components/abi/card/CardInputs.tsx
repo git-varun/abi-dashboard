@@ -71,13 +71,13 @@ export const CardInputs = ({ inputs, onInputChange }: CardInputsProps) => {
                         <div className="flex justify-between items-center px-0.5">
                             <label
                                 htmlFor={id}
-                                className="text-[10px] font-bold text-zinc-500 uppercase tracking-tighter group-focus-within:text-blue-400 transition-colors"
+                                className="text-[10px] font-black text-[#737687] uppercase tracking-tighter group-focus-within:text-[#0046dd] transition-colors"
                             >
-                                {inputName} <span className="text-zinc-700 ml-1">({type})</span>
+                                {inputName} <span className="text-[#c3c5d9] ml-1">({type})</span>
                             </label>
 
                             {/* Status Indicator */}
-                            {!error && onInputChange && (
+                            {!error && (
                                 <CheckCircle2 className={`h-3 w-3 ${error === null ? 'text-emerald-500/50' : 'text-zinc-800'}`} />
                             )}
                         </div>
@@ -87,7 +87,7 @@ export const CardInputs = ({ inputs, onInputChange }: CardInputsProps) => {
                                 <select
                                     id={id}
                                     onChange={(e) => handleChange(e.target.value)}
-                                    className={`w-full appearance-none rounded-lg border ${error ? 'border-red-500/50' : 'border-zinc-800'} bg-black p-2.5 text-xs font-mono text-zinc-300 outline-none focus:ring-1 focus:ring-blue-500/50`}
+                                    className={`w-full appearance-none border-2 ${error ? 'border-[#ba1a1a]' : 'border-black'} bg-white p-2.5 text-xs font-mono text-black outline-none focus:border-[#0046dd]`}
                                 >
                                     <option value="">Select Boolean...</option>
                                     <option value="true">true</option>
@@ -97,7 +97,7 @@ export const CardInputs = ({ inputs, onInputChange }: CardInputsProps) => {
                                 <div className="relative">
                                     <Input
                                         id={id}
-                                        className={`border ${error ? 'border-red-500/50' : 'border-zinc-800'} bg-black px-3 py-5 text-xs font-mono text-blue-400 transition-all placeholder:text-zinc-700 focus:ring-2 focus:ring-blue-500/10`}
+                                        className={`border-2 ${error ? 'border-[#ba1a1a]' : 'border-black'} bg-white px-3 py-5 text-xs font-mono text-[#0046dd] transition-all placeholder:text-[#c3c5d9] focus:border-[#0046dd] focus:ring-0`}
                                         placeholder={type.endsWith('[]') ? '[val1, val2]' : `Enter ${type}...`}
                                         onChange={(e) => handleChange(e.target.value)}
                                     />
@@ -111,7 +111,7 @@ export const CardInputs = ({ inputs, onInputChange }: CardInputsProps) => {
                         </div>
 
                         {error && (
-                            <p id={`${id}-err`} role="alert" className="flex items-center gap-1.5 px-1 text-[10px] font-medium text-red-400 animate-in fade-in slide-in-from-top-1">
+                            <p id={`${id}-err`} role="alert" className="flex items-center gap-1.5 px-1 text-[10px] font-bold text-[#ba1a1a]">
                                 <span>{error}</span>
                             </p>
                         )}

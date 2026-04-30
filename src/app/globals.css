@@ -1,63 +1,150 @@
 @import "tailwindcss";
-
 @plugin "tailwindcss-animate";
 
 @theme {
-    /* Mapping variables for Shadcn compatibility */
-    --color-background: hsl(var(--background));
-    --color-foreground: hsl(var(--foreground));
-    --color-card: hsl(var(--card));
-    --color-card-foreground: hsl(var(--card-foreground));
-    --color-border: hsl(var(--border));
-    --color-primary: hsl(var(--primary));
-    --color-primary-foreground: hsl(var(--primary-foreground));
-    --radius-lg: var(--radius);
+    /* Material Design 3 color tokens */
+    --color-background: #f9f9f9;
+    --color-foreground: #1b1b1b;
+    --color-surface: #f9f9f9;
+    --color-surface-bright: #f9f9f9;
+    --color-surface-dim: #dadada;
+    --color-surface-variant: #e2e2e2;
+    --color-surface-container-lowest: #ffffff;
+    --color-surface-container-low: #f3f3f3;
+    --color-surface-container: #eeeeee;
+    --color-surface-container-high: #e8e8e8;
+    --color-surface-container-highest: #e2e2e2;
+    --color-on-surface: #1b1b1b;
+    --color-on-surface-variant: #434656;
+    --color-on-background: #1b1b1b;
+    --color-inverse-surface: #303030;
+    --color-inverse-on-surface: #f1f1f1;
+
+    --color-primary: #0046dd;
+    --color-primary-container: #2b60ff;
+    --color-primary-fixed: #dde1ff;
+    --color-primary-fixed-dim: #b7c4ff;
+    --color-on-primary: #ffffff;
+    --color-on-primary-container: #f4f3ff;
+    --color-on-primary-fixed: #001552;
+    --color-on-primary-fixed-variant: #0038b6;
+    --color-inverse-primary: #b7c4ff;
+    --color-surface-tint: #004ced;
+
+    --color-secondary: #506600;
+    --color-secondary-container: #c1f100;
+    --color-secondary-fixed: #c3f400;
+    --color-secondary-fixed-dim: #abd600;
+    --color-on-secondary: #ffffff;
+    --color-on-secondary-container: #546b00;
+    --color-on-secondary-fixed: #161e00;
+    --color-on-secondary-fixed-variant: #3c4d00;
+
+    --color-tertiary: #9d009d;
+    --color-tertiary-container: #c600c6;
+    --color-tertiary-fixed: #ffd7f5;
+    --color-tertiary-fixed-dim: #ffabf3;
+    --color-on-tertiary: #ffffff;
+    --color-on-tertiary-container: #fff1f8;
+    --color-on-tertiary-fixed: #380038;
+    --color-on-tertiary-fixed-variant: #810081;
+
+    --color-error: #ba1a1a;
+    --color-error-container: #ffdad6;
+    --color-on-error: #ffffff;
+    --color-on-error-container: #93000a;
+
+    --color-outline: #737687;
+    --color-outline-variant: #c3c5d9;
+
+    /* Spacing tokens */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 32px;
+    --spacing-xl: 64px;
+    --spacing-gutter: 24px;
+
+    /* Border radius */
+    --radius: 0.25rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
 }
 
 @layer base {
-    :root {
-        --background: 0 0% 100%;
-        --foreground: 240 10% 3.9%;
-        --card: 0 0% 100%;
-        --card-foreground: 240 10% 3.9%;
-        --primary: 240 5.9% 10%;
-        --primary-foreground: 0 0% 98%;
-        --border: 240 5.9% 90%;
-        --radius: 0.75rem;
-    }
-
-    .dark {
-        --background: 240 10% 3.9%; /* Deep Zinc Black */
-        --foreground: 0 0% 98%;
-        --card: 240 10% 3.9%;
-        --card-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 240 5.9% 10%;
-        --border: 240 3.7% 15.9%;
-    }
-}
-
-@layer base {
-    * {
-        /* Use raw CSS variables for the default border color in v4 */
-        border-color: hsl(var(--border));
-    }
-
+    * { border-color: #000000; }
     body {
-        background-color: hsl(var(--background));
-        color: hsl(var(--foreground));
+        background-color: #f9f9f9;
+        color: #1b1b1b;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+
+    /* Smooth scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
+
+    /* Material Symbols */
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        display: inline-block;
+        vertical-align: middle;
     }
 }
 
+@layer utilities {
+    /* Neobrutalist shadows */
+    .neo-shadow {
+        box-shadow: 4px 4px 0px 0px #000000;
+    }
+    .neo-shadow-lg {
+        box-shadow: 8px 8px 0px 0px #000000;
+    }
+    .neo-shadow-active {
+        box-shadow: 0px 0px 0px 0px #000000;
+    }
+    .neo-shadow-sm {
+        box-shadow: 2px 2px 0px 0px #000000;
+    }
+
+    /* Text selection */
+    ::selection {
+        background-color: #c3f400;
+        color: #161e00;
+    }
+}
+
+/* Shimmer animation for Generate button */
+@keyframes shimmer {
+    0% { background-position: 200% center; }
+    100% { background-position: -200% center; }
+}
+.animate-shimmer {
+    animation: shimmer 3s linear infinite;
+    background-size: 200% auto;
+}
+
+/* Block number flash */
+@keyframes blockFlash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+.block-flash {
+    animation: blockFlash 0.6s ease-in-out;
+}
+
+/* Sonner toast theme */
 [data-sonner-toast] {
-    background: #09090b !important; /* Matches your zinc-950 theme */
-    border: 1px solid #27272a !important;
-    color: #fff !important;
-    padding: 16px !important;
-    border-radius: 12px !important;
+    background: #ffffff !important;
+    border: 2px solid #000000 !important;
+    color: #1b1b1b !important;
+    padding: 14px 16px !important;
+    border-radius: 4px !important;
+    box-shadow: 4px 4px 0px 0px #000000 !important;
 }
 
 [data-sonner-toast] [data-description] {
-    color: #a1a1aa !important;
+    color: #434656 !important;
     margin-top: 4px !important;
 }

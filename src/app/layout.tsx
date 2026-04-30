@@ -1,29 +1,34 @@
 import type {Metadata} from "next";
-import {Inter} from "next/font/google";
+import {Space_Grotesk} from "next/font/google";
 import "./globals.css";
-import {Providers} from "./providers";
 import {Toaster} from "sonner";
+import {ClientProviders} from "./ClientProviders";
 
-const inter = Inter({subsets: ["latin"]});
+const spaceGrotesk = Space_Grotesk({subsets: ["latin"], weight: ["300","400","500","600","700"]});
 
 export const metadata: Metadata = {
-    title: "ABI Explorer | Pro",
+    title: "ABI Workbench | Pro",
     description: "Modern smart contract interaction tool",
 };
 
 export default function RootLayout({
   children,
-                                   }: {
+}: {
   children: React.ReactNode;
 }) {
   return (
-      // 'dark' class ensures the Zinc theme is active
-      // suppressHydrationWarning handles browser extension conflicts
-      <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`${inter.className} bg-background text-foreground antialiased`}>
-      <Providers>{children}
-          <Toaster theme="dark" position="top-center" richColors/>
-      </Providers>
+      <html lang="en" suppressHydrationWarning>
+      <head>
+          <link
+              href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+              rel="stylesheet"
+          />
+      </head>
+      <body suppressHydrationWarning className={`${spaceGrotesk.className} bg-background text-on-background antialiased`}>
+      <ClientProviders>
+          {children}
+          <Toaster position="top-center" richColors/>
+      </ClientProviders>
       </body>
     </html>
   );

@@ -1,31 +1,55 @@
-// src/lib/wagmi.ts
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
-import { mainnet, polygon, sepolia, arbitrum } from 'wagmi/chains';
 import { http } from 'wagmi';
+import { SUPPORTED_CHAINS, getAlchemySubdomain } from './chain';
 
 const ALCHEMY_KEY = process.env.NEXT_PUBLIC_ALCHEMY_KEY;
 const WALLET_CONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
 
 if (!ALCHEMY_KEY) {
-  // Do not throw here; allow local development without an Alchemy key.
-  // Consumers should set NEXT_PUBLIC_ALCHEMY_KEY for production to avoid rate limits.
-  // Keeping a warning so developers notice the missing key.
-   
-  console.warn('NEXT_PUBLIC_ALCHEMY_KEY not set — falling back to public RPCs.');
+    console.warn('NEXT_PUBLIC_ALCHEMY_KEY not set — falling back to public RPCs.');
 }
 
-const transports: any = {};
+// G-03: read preferred chain from localStorage
+let preferredChain: (typeof SUPPORTED_CHAINS)[number] | undefined;
+if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem('preferred_chain');
+    if (stored) {
+        const chainId = parseInt(stored, 10);
+        if (!isNaN(chainId)) {
+            preferredChain = SUPPORTED_CHAINS.find(c => c.id === chainId);
+        }
+    }
+}
+
+// G-04: read RPC override from localStorage
+let rpcOverride: string | null = null;
+if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem('rpc_override');
+    if (stored) {
+        try { new URL(stored); rpcOverride = stored; } catch { /* malformed — ignore */ }
+    }
+}
+
+const transports: Record<number, ReturnType<typeof http>> = {};
 if (ALCHEMY_KEY) {
-  transports[mainnet.id] = http(`https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`);
-  transports[polygon.id] = http(`https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`);
-  transports[arbitrum.id] = http(`https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`);
-  transports[sepolia.id] = http(`https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_KEY}`);
+    for (const chain of SUPPORTED_CHAINS) {
+        const subdomain = getAlchemySubdomain(chain.id);
+        if (subdomain) {
+            transports[chain.id] = http(`https://${subdomain}.g.alchemy.com/v2/${ALCHEMY_KEY}`);
+        }
+    }
+}
+
+// G-04: inject custom transport for preferred chain if rpcOverride is set
+if (rpcOverride && preferredChain) {
+    transports[preferredChain.id] = http(rpcOverride);
 }
 
 export const config = getDefaultConfig({
-  appName: 'ABI Explorer Pro',
-  projectId: WALLET_CONNECT_PROJECT_ID || '',
-  chains: [mainnet, polygon, arbitrum, sepolia],
-  ssr: true,
-  transports: Object.keys(transports).length ? transports : undefined,
+    appName: 'ABI Workbench',
+    projectId: WALLET_CONNECT_PROJECT_ID ?? '',
+    chains: SUPPORTED_CHAINS as any,
+    ssr: true,
+    ...(preferredChain ? { initialChain: preferredChain } : {}),
+    transports: Object.keys(transports).length ? transports : undefined,
 });
