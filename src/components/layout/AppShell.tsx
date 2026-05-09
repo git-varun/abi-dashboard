@@ -7,13 +7,6 @@ import { CommandPalette } from './CommandPalette';
 import { ToolDrawer } from './ToolDrawer';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 
-const TOP_NAV = [
-    { href: '/dashboard',  label: 'DASHBOARD',  icon: 'dashboard' },
-    { href: '/contracts',  label: 'CONTRACTS',  icon: 'terminal' },
-    { href: '/debugger',   label: 'DEBUGGER',   icon: 'bug_report' },
-    { href: '/monitoring', label: 'MONITORING', icon: 'analytics' },
-];
-
 const SIDE_NAV = [
     {
         section: 'WORKBENCH',
@@ -24,9 +17,10 @@ const SIDE_NAV = [
     {
         section: 'CONTRACT TOOLS',
         items: [
-            { href: '/contracts', label: 'CONTRACTS', icon: 'terminal' },
-            { href: '/explorer',  label: 'EXPLORER',  icon: 'search',    indent: true },
+            { href: '/workspace', label: 'WORKSPACE', icon: 'terminal' },
             { href: '/debugger',  label: 'DEBUGGER',  icon: 'bug_report', indent: true },
+            { href: '/events',    label: 'EVENTS',    icon: 'event_note', indent: true },
+            { href: '/compare',   label: 'ABI DIFF',  icon: 'difference',  indent: true },
         ],
     },
     {
@@ -39,9 +33,9 @@ const SIDE_NAV = [
     {
         section: 'SYSTEM',
         items: [
-            { href: '/tiers',    label: 'TIERS',    icon: 'layers' },
             { href: '/tools',    label: 'TOOLS',    icon: 'build' },
             { href: '/settings', label: 'SETTINGS', icon: 'settings' },
+            { href: '/about',    label: 'ABOUT',    icon: 'info' },
         ],
     },
 ];
@@ -54,27 +48,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="min-h-screen bg-[#f9f9f9]">
             {/* Top Nav */}
             <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-20 bg-white border-b-4 border-black neo-shadow">
-                <div className="flex items-center gap-8">
-                    <span className="text-2xl font-black text-black tracking-tighter uppercase">ABI_WORKBENCH</span>
-                    <div className="hidden md:flex gap-1">
-                        {TOP_NAV.map(item => {
-                            const active = pathname === item.href;
-                            return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={`font-bold uppercase tracking-tight h-20 flex items-center gap-2 px-4 transition-all ${
-                                        active
-                                            ? 'text-[#2B60FF] border-b-4 border-[#2B60FF]'
-                                            : 'text-black hover:bg-[#2B60FF] hover:text-white'
-                                    }`}
-                                >
-                                    <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
-                                    {item.label}
-                                </Link>
-                            );
-                        })}
-                    </div>
+                <div className="flex items-center gap-4">
+                    <Link href="/dashboard" className="text-2xl font-black text-black tracking-tighter uppercase hover:text-[#2B60FF] transition-colors">
+                        ABI_WORKBENCH
+                    </Link>
+                    <span className="hidden md:block text-[#e2e2e2] font-bold select-none">|</span>
+                    <span className="hidden md:block text-xs font-bold uppercase text-[#737687] tracking-widest">
+                        {pathname.replace('/', '').toUpperCase() || 'DASHBOARD'}
+                    </span>
                 </div>
                 <div className="flex items-center gap-4">
                     <button
@@ -126,10 +107,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {/* Bottom CTA */}
                 <div className="p-4 border-t-4 border-black">
                     <Link
-                        href="/contracts"
+                        href="/workspace"
                         className="block w-full bg-[#c3f400] text-[#161e00] border-2 border-black neo-shadow py-4 font-bold uppercase tracking-widest text-center hover:bg-[#abd600] active:translate-y-1 active:shadow-none transition-all"
                     >
-                        NEW PROJECT
+                        LOAD CONTRACT
                     </Link>
                 </div>
             </aside>

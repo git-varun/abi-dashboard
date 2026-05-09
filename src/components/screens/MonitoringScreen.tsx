@@ -1,47 +1,90 @@
 "use client";
 
 import { useRef, useState, useEffect } from 'react';
+import { usePublicClient } from 'wagmi';
 import { AppShell } from '@/components/layout/AppShell';
 import { useLiveChain } from '@/hooks/useLiveChain';
 
 const MAX_GAS_HISTORY = 10;
+const MAX_BLOCK_FEED = 8;
 
 type GasSnapshot = { height: string; label: string };
+type BlockRow = {
+    block: string;
+    txs: number;
+    gasUsed: string;
+    gasUsedPct: number;
+    miner: string;
+    time: string;
+    timestamp: number;
+};
 
 function toSnapshot(gwei: number, max: number): GasSnapshot {
     const pct = Math.min(100, Math.round((gwei / max) * 100));
     return { height: `${pct}%`, label: gwei.toFixed(1) };
 }
 
-const BLOCK_FEED = [
-    { block: '20,184,512', txs: 218, gasUsed: '87%', miner: '0xbea...c44', time: '12s ago' },
-    { block: '20,184,511', txs: 194, gasUsed: '79%', miner: '0x1f9...d3a', time: '24s ago' },
-    { block: '20,184,510', txs: 241, gasUsed: '98%', miner: '0x4b8...11c', time: '36s ago' },
-    { block: '20,184,509', txs: 183, gasUsed: '74%', miner: '0xbea...c44', time: '48s ago' },
-    { block: '20,184,508', txs: 209, gasUsed: '85%', miner: '0xd4e...77b', time: '1m ago' },
-];
+function timeAgo(ts: number): string {
+    const s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 60) return `${s}s ago`;
+    return `${Math.floor(s / 60)}m ago`;
+}
 
 export default function MonitoringScreen() {
     const { blockNumber, gasData, ethPriceUsd, isNewBlock } = useLiveChain();
+    const publicClient = usePublicClient();
 
-    const ringBuffer = useRef<GasSnapshot[]>([]);
+    const gasRing = useRef<GasSnapshot[]>([]);
     const [gasHistory, setGasHistory] = useState<GasSnapshot[]>([]);
+    const [blockFeed, setBlockFeed] = useState<BlockRow[]>([]);
 
+    // Gas history chart — updates every new gasData tick
     useEffect(() => {
         if (!gasData?.standard) return;
         const gwei = Number(gasData.standard);
         if (isNaN(gwei)) return;
-
-        const buf = ringBuffer.current;
-        buf.push({ height: '0%', label: gwei.toFixed(1) }); // placeholder, recalculate below
+        const buf = gasRing.current;
+        buf.push({ height: '0%', label: gwei.toFixed(1) });
         if (buf.length > MAX_GAS_HISTORY) buf.shift();
-
-        // normalize heights relative to the max in the buffer
         const maxGwei = Math.max(...buf.map(s => parseFloat(s.label)));
-        const normalized = buf.map(s => toSnapshot(parseFloat(s.label), maxGwei));
-        ringBuffer.current = normalized;
-        setGasHistory([...normalized]);
+        gasRing.current = buf.map(s => toSnapshot(parseFloat(s.label), maxGwei));
+        setGasHistory([...gasRing.current]);
     }, [gasData]);
+
+    // Live block feed via watchBlocks
+    useEffect(() => {
+        if (!publicClient) return;
+
+        const unsub = publicClient.watchBlocks({
+            onBlock: (block) => {
+                const gasLimit = Number(block.gasLimit);
+                const gasUsedNum = Number(block.gasUsed);
+                const pct = gasLimit > 0 ? Math.round((gasUsedNum / gasLimit) * 100) : 0;
+                const row: BlockRow = {
+                    block: Number(block.number ?? 0n).toLocaleString(),
+                    txs: block.transactions.length,
+                    gasUsed: `${pct}%`,
+                    gasUsedPct: pct,
+                    miner: block.miner
+                        ? `${block.miner.slice(0, 6)}…${block.miner.slice(-3)}`
+                        : '—',
+                    time: 'just now',
+                    timestamp: Number(block.timestamp) * 1000,
+                };
+                setBlockFeed(prev => [row, ...prev].slice(0, MAX_BLOCK_FEED));
+            },
+        });
+
+        return () => unsub();
+    }, [publicClient]);
+
+    // Refresh relative timestamps every 12s
+    useEffect(() => {
+        const id = setInterval(() => {
+            setBlockFeed(prev => prev.map(b => ({ ...b, time: timeAgo(b.timestamp) })));
+        }, 12_000);
+        return () => clearInterval(id);
+    }, []);
 
     return (
         <AppShell>
@@ -109,17 +152,22 @@ export default function MonitoringScreen() {
                         <span className="text-[10px] font-mono text-[#737687] uppercase">GWEI</span>
                     </div>
                     <div className="p-8 h-64 flex items-end gap-3 justify-between">
-                        {gasHistory.map((bar, i) => (
-                            <div
-                                key={i}
-                                className="w-full bg-[#2b60ff] hover:bg-[#c3f400] border-t-2 border-black relative group transition-colors"
-                                style={{ height: bar.height }}
-                            >
-                                <div className="hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 uppercase whitespace-nowrap">
-                                    {bar.label}
+                        {gasHistory.length === 0
+                            ? Array.from({ length: 10 }).map((_, i) => (
+                                <div key={i} className="w-full bg-[#e2e2e2] border-t-2 border-black" style={{ height: '20%' }} />
+                            ))
+                            : gasHistory.map((bar, i) => (
+                                <div
+                                    key={i}
+                                    className="w-full bg-[#2b60ff] hover:bg-[#c3f400] border-t-2 border-black relative group transition-colors"
+                                    style={{ height: bar.height }}
+                                >
+                                    <div className="hidden group-hover:block absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 uppercase whitespace-nowrap">
+                                        {bar.label}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))
+                        }
                     </div>
                     <div className="border-t-2 border-black p-4 flex justify-between text-[10px] font-bold uppercase text-[#737687]">
                         <span>-10 BLK</span><span>-8</span><span>-6</span><span>-4</span><span>-2</span><span>-1</span><span>LATEST</span>
@@ -136,34 +184,38 @@ export default function MonitoringScreen() {
                     </div>
                     <div className="flex-1 p-4 space-y-3">
                         {[
-                            { net: 'MAINNET', status: 'ONLINE', gas: gasData?.standard ?? '—', color: 'text-[#c3f400]', dot: 'bg-[#c3f400]' },
-                            { net: 'ARBITRUM', status: 'ONLINE', gas: '0.1', color: 'text-[#c3f400]', dot: 'bg-[#c3f400]' },
-                            { net: 'BASE', status: 'ONLINE', gas: '0.1', color: 'text-[#c3f400]', dot: 'bg-[#c3f400]' },
-                            { net: 'OPTIMISM', status: 'ONLINE', gas: '0.1', color: 'text-[#c3f400]', dot: 'bg-[#c3f400]' },
-                            { net: 'POLYGON', status: 'ONLINE', gas: '30', color: 'text-[#c3f400]', dot: 'bg-[#c3f400]' },
-                            { net: 'SEPOLIA', status: 'ONLINE', gas: '5', color: 'text-[#c3f400]', dot: 'bg-[#c3f400]' },
+                            { net: 'MAINNET',  gas: gasData?.standard ?? '—' },
+                            { net: 'ARBITRUM', gas: '0.1' },
+                            { net: 'BASE',     gas: '0.1' },
+                            { net: 'OPTIMISM', gas: '0.1' },
+                            { net: 'POLYGON',  gas: '30' },
+                            { net: 'SEPOLIA',  gas: '5' },
                         ].map(n => (
                             <div key={n.net} className="flex items-center justify-between font-mono text-xs border-b border-[#222] pb-2">
                                 <div className="flex items-center gap-2">
-                                    <span className={`w-1.5 h-1.5 rounded-full ${n.dot}`}></span>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#c3f400]"></span>
                                     <span className="text-white uppercase">{n.net}</span>
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <span className="text-[#666] uppercase">{n.gas} GWEI</span>
-                                    <span className={`${n.color} uppercase font-black text-[10px]`}>{n.status}</span>
+                                    <span className="text-[#c3f400] uppercase font-black text-[10px]">ONLINE</span>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Block Feed */}
+                {/* Live Block Feed */}
                 <div className="col-span-12 bg-white border-2 border-black neo-shadow">
                     <div className="bg-black text-white p-4 flex justify-between items-center">
                         <h3 className="font-bold uppercase tracking-widest text-sm flex items-center gap-2">
                             <span className="material-symbols-outlined text-[#c3f400]">view_list</span>
                             BLOCK_FEED — LATEST PROPOSALS
                         </h3>
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-[#c3f400] animate-pulse"></div>
+                            <span className="text-[10px] font-mono text-[#737687] uppercase">LIVE</span>
+                        </div>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
@@ -177,7 +229,13 @@ export default function MonitoringScreen() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {BLOCK_FEED.map((b, i) => (
+                                {blockFeed.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="p-8 text-center text-xs font-bold uppercase text-[#737687]">
+                                            Waiting for next block…
+                                        </td>
+                                    </tr>
+                                ) : blockFeed.map((b, i) => (
                                     <tr key={i} className="border-b-2 border-black hover:bg-[#e8e8e8] transition-colors">
                                         <td className="p-4 border-r-2 border-black font-mono font-bold text-[#2b60ff]">{b.block}</td>
                                         <td className="p-4 border-r-2 border-black font-bold">{b.txs}</td>

@@ -29,14 +29,18 @@ src/
     actions/abi.ts        ← Server action: fetch ABI from Etherscan V2
     providers.tsx         ← Re-exports ClientProviders (legacy shim)
     dashboard/page.tsx    ← Mounts DashboardScreen (ssr: false)
-    contracts/page.tsx    ← Mounts ContractsScreen (ssr: false)
-    explorer/page.tsx     ← Mounts ExplorerScreen (ssr: false)
+    workspace/page.tsx    ← Mounts WorkspaceScreen (ssr: false) — unified intake + explorer
+    contracts/page.tsx    ← redirect → /workspace
+    explorer/page.tsx     ← redirect → /workspace
     debugger/page.tsx     ← Mounts DebuggerScreen (ssr: false)
+    events/page.tsx       ← Mounts EventsScreen (ssr: false) — live event watcher
+    compare/page.tsx      ← Mounts CompareScreen (ssr: false) — ABI diff tool
     monitoring/page.tsx   ← Mounts MonitoringScreen (ssr: false)
     history/page.tsx      ← Mounts HistoryScreen (ssr: false)
     tools/page.tsx        ← Mounts ToolsScreen (ssr: false)
     settings/page.tsx     ← Mounts SettingsScreen (ssr: false)
-    tiers/page.tsx        ← Mounts TiersScreen (ssr: false)
+    tiers/page.tsx        ← redirect → /about
+    about/page.tsx        ← Mounts AboutScreen (ssr: false)
   store/
     workspace.tsx         ← Global contract state (address, abiInput, isLoaded…)
                             + WorkspaceComputedProvider (parsedAbi, readFunctions…)
@@ -58,21 +62,20 @@ src/
       CommandPalette.tsx  ← ⌘K overlay: search tools, functions, history
       HubLayout.tsx       ← DEAD CODE — superseded by AppShell; safe to delete
       LeftOutline.tsx     ← DEAD CODE — superseded by SideNav in AppShell; safe to delete
-      RightRail.tsx       ← DEAD CODE — tool panel removed; safe to delete
-      StatusBar.tsx       ← DEAD CODE — removed from layout; safe to delete
     screens/
-      DashboardScreen.tsx ← System overview, static charts, pinned contracts (hardcoded)
-      ContractsScreen.tsx ← ABI intake + function explorer (wraps abi/dashboard)
-      ExplorerScreen.tsx  ← Read/Write explorer; requires contract loaded at /contracts first
-      DebuggerScreen.tsx  ← Simulation + gas estimation for write functions
-      MonitoringScreen.tsx ← Real-time chain telemetry (partial; see gaps.md)
-      HistoryScreen.tsx   ← IndexedDB contract visits + transaction log
-      ToolsScreen.tsx     ← All 9 dev tools in bento grid
-      SettingsScreen.tsx  ← Chain selector + RPC override (localStorage; not wired to wagmi)
-      TiersScreen.tsx     ← Feature tier marketing page (no enforcement)
+      DashboardScreen.tsx  ← System overview, live IndexedDB metrics, session log
+      WorkspaceScreen.tsx  ← Unified intake + DashboardExplorer (inline when contract loaded)
+      DebuggerScreen.tsx   ← Simulation + gas estimation for write functions
+      EventsScreen.tsx     ← Live contract event watcher via viem watchContractEvent
+      CompareScreen.tsx    ← Paste two ABIs; useMemo diff shows added/removed/unchanged
+      MonitoringScreen.tsx ← Real-time gas, live block feed via watchBlocks
+      HistoryScreen.tsx    ← IndexedDB visits + paginated transaction log; live log wired to real data
+      ToolsScreen.tsx      ← All 9 dev tools; FREQUENTLY USED buttons scroll to tool by id
+      SettingsScreen.tsx   ← Chain selector (useSwitchChain) + RPC override
+      AboutScreen.tsx      ← Project info, routes reference, shortcuts, tech stack
     inspector/
       ValueInspector.tsx  ← Hover tooltip with value interpretations + pipe buttons
-                            ⚠ BROKEN: fires 'open-tool' event but RightRail listener removed
+                            Fires 'open-tool' event → handled by ToolDrawer
       SmartPastePill.tsx  ← Inline suggestion when paste is detected as a known type
     tools/
       registry.ts         ← Tool metadata: id, name, shortcut, inputTypes
@@ -111,15 +114,14 @@ Value output hovered
   → ValueInspector.inspect(value) → Interpretation[]
   → User clicks "pipe" → pipeline.prefill(toolId, value)
   → CustomEvent 'open-tool' fired
-  ⚠ BROKEN: no listener for 'open-tool' since RightRail was removed
-  → Tool piping is a no-op; see gaps.md for fix path
+  → ToolDrawer listens → opens drawer with pre-filled tool
 
 ⌘K pressed
   → useCommandPalette.isOpen = true
   → CommandPalette searches tools + readFunctions + writeFunctions + history
   → Select function → scrollIntoView(fn-{name})
   → Select history → fires 'load-contract' event → DashboardIntake hydrates
-  ⚠ PARTIAL: "Select tool" path fired 'open-tool' → RightRail; now a no-op
+  → Select tool → fires 'open-tool' → ToolDrawer opens
 ```
 
 ---

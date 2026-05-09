@@ -96,7 +96,7 @@ export default function DashboardScreen() {
                     </div>
                     {recentHistory.length === 0 ? (
                         <div className="p-8 text-center text-[#737687] font-bold uppercase text-sm">
-                            No activity yet — load a contract at <Link href="/contracts" className="text-[#2b60ff] underline">/contracts</Link> to begin.
+                            No activity yet — load a contract at <Link href="/workspace" className="text-[#2b60ff] underline">/workspace</Link> to begin.
                         </div>
                     ) : (
                         <div className="divide-y-2 divide-black">
@@ -145,13 +145,13 @@ export default function DashboardScreen() {
                             <span className="material-symbols-outlined">push_pin</span>
                             PINNED_CONTRACTS
                         </h3>
-                        <Link href="/contracts" className="bg-black text-white px-3 py-1 text-xs border border-white hover:bg-[#c3f400] hover:text-black transition-all uppercase font-bold">
+                        <Link href="/workspace" className="bg-black text-white px-3 py-1 text-xs border border-white hover:bg-[#c3f400] hover:text-black transition-all uppercase font-bold">
                             ADD_CONTRACT
                         </Link>
                     </div>
                     {pinnedContracts.length === 0 ? (
                         <div className="p-8 text-center text-[#737687] font-bold uppercase text-sm">
-                            No pinned contracts — visit a contract at <Link href="/contracts" className="text-[#2b60ff] underline">/contracts</Link>, then pin it here.
+                            No pinned contracts — visit a contract at <Link href="/workspace" className="text-[#2b60ff] underline">/workspace</Link>, then pin it here.
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
@@ -193,25 +193,25 @@ export default function DashboardScreen() {
                     <span className="material-symbols-outlined text-8xl absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform">bolt</span>
                     <h4 className="text-3xl font-black uppercase mb-4 relative z-10">QUICK_DEBUG</h4>
                     <p className="font-bold uppercase tracking-tighter relative z-10">Instant contract state verification in sandboxed environment.</p>
-                    <Link href="/contracts" className="mt-8 bg-black text-white px-6 py-3 border-2 border-black font-bold uppercase hover:bg-white hover:text-black transition-all neo-shadow active:shadow-none inline-block">OPEN_TTY</Link>
+                    <Link href="/workspace" className="mt-8 bg-black text-white px-6 py-3 border-2 border-black font-bold uppercase hover:bg-white hover:text-black transition-all neo-shadow active:shadow-none inline-block">OPEN_TTY</Link>
                 </div>
                 <div className="bg-[#2b60ff] text-white p-8 border-4 border-black neo-shadow relative overflow-hidden group">
-                    <span className="material-symbols-outlined text-8xl absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform">shield</span>
-                    <h4 className="text-3xl font-black uppercase mb-4 relative z-10">SECURITY_WATCH</h4>
-                    <p className="font-bold uppercase tracking-tighter relative z-10">Automated vulnerability scans on every block proposal.</p>
-                    <Link href="/history" className="mt-8 bg-white text-black px-6 py-3 border-2 border-black font-bold uppercase hover:bg-[#c3f400] transition-all neo-shadow active:shadow-none inline-block">VIEW_REPORT</Link>
+                    <span className="material-symbols-outlined text-8xl absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform">build</span>
+                    <h4 className="text-3xl font-black uppercase mb-4 relative z-10">UTILITIES</h4>
+                    <p className="font-bold uppercase tracking-tighter relative z-10">9 dev tools: Wei, Keccak256, Calldata, 4-Byte, Storage Slot and more.</p>
+                    <Link href="/tools" className="mt-8 bg-white text-black px-6 py-3 border-2 border-black font-bold uppercase hover:bg-[#c3f400] transition-all neo-shadow active:shadow-none inline-block">OPEN_TOOLS</Link>
                 </div>
                 <div className="bg-white p-8 border-4 border-black neo-shadow relative overflow-hidden group">
-                    <span className="material-symbols-outlined text-8xl absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform">database</span>
-                    <h4 className="text-3xl font-black uppercase mb-4 relative z-10">DATA_SYNC</h4>
-                    <p className="font-bold uppercase tracking-tighter relative z-10">Export transaction history to local workbench cache.</p>
-                    <Link href="/history" className="mt-8 bg-black text-white px-6 py-3 border-2 border-black font-bold uppercase hover:bg-[#c3f400] hover:text-black transition-all neo-shadow active:shadow-none inline-block">RUN_EXPORT</Link>
+                    <span className="material-symbols-outlined text-8xl absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform">history</span>
+                    <h4 className="text-3xl font-black uppercase mb-4 relative z-10">TX_HISTORY</h4>
+                    <p className="font-bold uppercase tracking-tighter relative z-10">Browse contract visits and transaction log from your local IndexedDB.</p>
+                    <Link href="/history" className="mt-8 bg-black text-white px-6 py-3 border-2 border-black font-bold uppercase hover:bg-[#c3f400] hover:text-black transition-all neo-shadow active:shadow-none inline-block">VIEW_LOG</Link>
                 </div>
             </div>
 
             {/* FAB */}
             <Link
-                href="/contracts"
+                href="/workspace"
                 className="fixed bottom-8 right-8 bg-[#CCFF00] text-black w-16 h-16 border-4 border-black neo-shadow flex items-center justify-center hover:bg-white active:translate-y-1 active:shadow-none transition-all z-50"
             >
                 <span className="material-symbols-outlined text-3xl font-bold">add</span>

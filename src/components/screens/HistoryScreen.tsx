@@ -5,14 +5,6 @@ import { AppShell } from '@/components/layout/AppShell';
 import { getAllHistory, type HistoryItem } from '@/lib/db';
 import { toast } from 'sonner';
 
-const LIVE_LOGS = [
-    { time: '14:02:11', type: 'INFO', msg: 'New block detected: #18,294,002', color: 'text-white' },
-    { time: '14:02:14', type: 'EVENT', msg: 'PairCreated detected on Uniswap V3', color: 'text-[#abd600]' },
-    { time: '14:02:18', type: 'SOCKET', msg: 'Received 12 new pool events', color: 'text-white' },
-    { time: '14:02:22', type: 'INFO', msg: 'Node LHR-02 synchronized', color: 'text-[#b7c4ff]' },
-    { time: '14:02:25', type: 'ERROR', msg: 'Gas estimation failed for 0x7a...bc', color: 'text-[#ba1a1a]' },
-    { time: '14:02:30', type: 'INFO', msg: 'Memory pool cleaned (0.4s)', color: 'text-white' },
-];
 
 function timeAgo(ts: number): string {
     const diff = Date.now() - ts;
@@ -25,8 +17,12 @@ function timeAgo(ts: number): string {
     return `${Math.floor(h / 24)}d ago`;
 }
 
+const PAGE_SIZE = 20;
+
 export default function HistoryScreen() {
     const [history, setHistory] = useState<HistoryItem[]>([]);
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+    const [logFilter, setLogFilter] = useState('');
 
     useEffect(() => {
         getAllHistory()
@@ -113,7 +109,7 @@ export default function HistoryScreen() {
                                         ))}
                                     </>
                                 ) : (
-                                    history.slice(0, 20).map((item, i) => (
+                                    history.slice(0, visibleCount).map((item, i) => (
                                         <tr key={i} className="border-b-2 border-black hover:bg-[#f3f3f3] transition-colors cursor-pointer" onClick={() => item.type === 'contract_visit' && loadContract(item)}>
                                             <td className="p-4 border-r-2 border-black">
                                                 <span className={`text-[10px] font-black px-2 py-1 border-2 border-black uppercase ${
@@ -140,11 +136,16 @@ export default function HistoryScreen() {
                             </tbody>
                         </table>
                     </div>
-                    <div className="p-4 bg-[#e2e2e2] flex justify-center">
-                        <button className="text-xs font-black uppercase underline underline-offset-4 hover:text-[#0046dd] transition-colors">
-                            Load More History
-                        </button>
-                    </div>
+                    {history.length > visibleCount && (
+                        <div className="p-4 bg-[#e2e2e2] flex justify-center">
+                            <button
+                                onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+                                className="text-xs font-black uppercase underline underline-offset-4 hover:text-[#0046dd] transition-colors"
+                            >
+                                Load More ({history.length - visibleCount} remaining)
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Live Event Stream Terminal */}
@@ -157,20 +158,38 @@ export default function HistoryScreen() {
                         </div>
                         <span className="text-white text-[10px] font-mono font-black uppercase tracking-widest">LIVE_EVENT_STREAM.log</span>
                     </div>
-                    <div className="flex-1 p-4 font-mono text-sm text-[#c3f400] overflow-y-auto space-y-2 leading-relaxed">
-                        {LIVE_LOGS.map((log, i) => (
-                            <p key={i}>
-                                <span className="text-zinc-500">[{log.time}]</span>{' '}
-                                <span className={log.color}>{log.type}:</span>{' '}
-                                {log.msg}
-                            </p>
-                        ))}
-                        <p className="animate-pulse">_</p>
+                    <div className="flex-1 p-4 font-mono text-xs overflow-y-auto space-y-2 leading-relaxed">
+                        {history.length === 0 ? (
+                            <p className="text-zinc-500">&gt; AWAITING_EVENTS…</p>
+                        ) : (
+                            history
+                                .filter(item => {
+                                    if (!logFilter) return true;
+                                    const q = logFilter.toLowerCase();
+                                    return (item.name ?? '').toLowerCase().includes(q) ||
+                                        item.address.toLowerCase().includes(q) ||
+                                        (item.hash ?? '').toLowerCase().includes(q) ||
+                                        item.type.toLowerCase().includes(q);
+                                })
+                                .slice(0, 50)
+                                .map((item, i) => (
+                                    <p key={item.id ?? i} className={item.type === 'transaction' && item.status === 'failed' ? 'text-[#ba1a1a]' : 'text-[#c3f400]'}>
+                                        <span className="text-zinc-500">[{new Date(item.timestamp).toLocaleTimeString('en-US', { hour12: false })}]</span>
+                                        {' '}{item.type === 'contract_visit'
+                                            ? `CONTRACT: ${item.name || item.address}`
+                                            : `TX_${(item.status ?? 'OK').toUpperCase()}: ${item.hash?.slice(0, 10) ?? item.address}`
+                                        }
+                                    </p>
+                                ))
+                        )}
+                        <p className="animate-pulse text-[#c3f400]">_</p>
                     </div>
                     <div className="p-2 bg-zinc-900 border-t-2 border-black">
                         <div className="flex gap-2 items-center text-xs text-zinc-400 font-mono">
                             <span className="material-symbols-outlined text-xs">keyboard_arrow_right</span>
                             <input
+                                value={logFilter}
+                                onChange={e => setLogFilter(e.target.value)}
                                 className="bg-transparent border-none outline-none w-full text-white uppercase font-black placeholder:text-zinc-600 text-xs"
                                 placeholder="FILTER LOGS..."
                             />

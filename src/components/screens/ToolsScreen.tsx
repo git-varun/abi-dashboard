@@ -45,63 +45,63 @@ export default function ToolsScreen() {
             {/* Tool Grid */}
             <div className="grid grid-cols-12 gap-6">
                 {/* Wei Converter — col-span-8 */}
-                <div className="col-span-12 lg:col-span-8">
+                <div id="tool-wei" className="col-span-12 lg:col-span-8">
                     <ToolCard title="Wei / Gwei / ETH Converter" icon="swap_horiz">
                         <WeiConverter />
                     </ToolCard>
                 </div>
 
                 {/* Keccak256 — col-span-4, dark */}
-                <div className="col-span-12 lg:col-span-4">
+                <div id="tool-keccak" className="col-span-12 lg:col-span-4">
                     <ToolCard title="Keccak256" icon="fingerprint" dark>
                         <Keccak256 />
                     </ToolCard>
                 </div>
 
                 {/* Calldata Decoder — col-span-6 */}
-                <div className="col-span-12 lg:col-span-6">
+                <div id="tool-calldata" className="col-span-12 lg:col-span-6">
                     <ToolCard title="Calldata Decoder" icon="data_object">
                         <CalldataDecoder />
                     </ToolCard>
                 </div>
 
                 {/* 4-Byte Selector — col-span-6 */}
-                <div className="col-span-12 lg:col-span-6">
+                <div id="tool-fourByte" className="col-span-12 lg:col-span-6">
                     <ToolCard title="4-Byte Selector" icon="search">
                         <FourByteSelector />
                     </ToolCard>
                 </div>
 
                 {/* Timestamp Converter — col-span-3 */}
-                <div className="col-span-12 lg:col-span-3">
+                <div id="tool-timestamp" className="col-span-12 lg:col-span-3">
                     <ToolCard title="Unix Time" icon="schedule">
                         <TimestampConverter />
                     </ToolCard>
                 </div>
 
                 {/* Hex/Dec Converter — col-span-3 */}
-                <div className="col-span-12 lg:col-span-3">
+                <div id="tool-hex" className="col-span-12 lg:col-span-3">
                     <ToolCard title="Base Conv." icon="calculate">
                         <HexDecConverter />
                     </ToolCard>
                 </div>
 
                 {/* Token Formatter — col-span-3 */}
-                <div className="col-span-12 lg:col-span-3">
+                <div id="tool-tokenFormatter" className="col-span-12 lg:col-span-3">
                     <ToolCard title="Token Formatter" icon="token">
                         <TokenFormatter />
                     </ToolCard>
                 </div>
 
                 {/* Storage Slot — col-span-3 */}
-                <div className="col-span-12 lg:col-span-3">
+                <div id="tool-storageSlot" className="col-span-12 lg:col-span-3">
                     <ToolCard title="Storage Slot" icon="storage">
                         <StorageSlot />
                     </ToolCard>
                 </div>
 
                 {/* Address Checksum — col-span-6 */}
-                <div className="col-span-12 lg:col-span-6">
+                <div id="tool-addressChecksum" className="col-span-12 lg:col-span-6">
                     <ToolCard title="Address Checksum" icon="shield_person">
                         <AddressChecksum />
                     </ToolCard>
@@ -111,12 +111,16 @@ export default function ToolsScreen() {
                 <div className="col-span-12 border-2 border-dashed border-black p-6 flex items-center justify-center gap-8 overflow-x-auto flex-wrap">
                     <span className="text-xs font-black text-[#737687] uppercase shrink-0">FREQUENTLY USED:</span>
                     {[
-                        { icon: 'bolt', label: 'FAST_WEI' },
-                        { icon: 'token', label: 'ERC20_ABI' },
-                        { icon: 'visibility', label: 'ADDR_CHKSUM' },
-                        { icon: 'history', label: 'TX_REPLAY' },
+                        { icon: 'swap_horiz', label: 'WEI_CONV', targetId: 'tool-wei' },
+                        { icon: 'fingerprint', label: 'KECCAK256', targetId: 'tool-keccak' },
+                        { icon: 'shield_person', label: 'ADDR_CHKSUM', targetId: 'tool-addressChecksum' },
+                        { icon: 'data_object', label: 'CALLDATA', targetId: 'tool-calldata' },
                     ].map(item => (
-                        <button key={item.label} className="px-4 py-2 bg-white border-2 border-black text-xs font-black neo-shadow hover:bg-[#c3f400] active:shadow-none active:translate-y-0.5 transition-all flex items-center gap-2 uppercase">
+                        <button
+                            key={item.label}
+                            onClick={() => document.getElementById(item.targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                            className="px-4 py-2 bg-white border-2 border-black text-xs font-black neo-shadow hover:bg-[#c3f400] active:shadow-none active:translate-y-0.5 transition-all flex items-center gap-2 uppercase"
+                        >
                             <span className="material-symbols-outlined text-[16px]">{item.icon}</span>
                             {item.label}
                         </button>

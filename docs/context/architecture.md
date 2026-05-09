@@ -17,20 +17,23 @@ CommandPalette (overlay z-[100], triggered from TopNav ⌘K button)
 | Path | Component | Notes |
 |------|-----------|-------|
 | `/` | redirect | → `/dashboard` |
-| `/dashboard` | DashboardScreen | System overview, static charts (hardcoded data) |
-| `/contracts` | ContractsScreen | ABI intake + function explorer |
-| `/explorer` | ExplorerScreen | Read/Write explorer; requires contract loaded at `/contracts` |
-| `/debugger` | DebuggerScreen | Simulation + gas estimation; requires contract loaded at `/contracts` |
-| `/monitoring` | MonitoringScreen | Live chain telemetry (partial; block feed is static) |
-| `/history` | HistoryScreen | IndexedDB contract visits + transaction log |
-| `/tools` | ToolsScreen | All 9 dev tools in bento grid |
-| `/settings` | SettingsScreen | Chain selector + RPC override (localStorage only; not wired to wagmi) |
-| `/tiers` | TiersScreen | Feature tier marketing page (no enforcement) |
+| `/dashboard` | DashboardScreen | System overview, live IndexedDB metrics, session log |
+| `/workspace` | WorkspaceScreen | ABI intake + inline DashboardExplorer when contract loaded |
+| `/contracts` | redirect | → `/workspace` (backward compat) |
+| `/explorer` | redirect | → `/workspace` (backward compat) |
+| `/debugger` | DebuggerScreen | Simulation + gas estimation; requires contract in workspace store |
+| `/events` | EventsScreen | Live contract event watcher via viem watchContractEvent |
+| `/compare` | CompareScreen | Paste two ABIs side-by-side; diff shows added / removed / unchanged entries |
+| `/monitoring` | MonitoringScreen | Live gas prices, live block feed via watchBlocks, ETH price |
+| `/history` | HistoryScreen | IndexedDB contract visits + transaction log; live log panel wired to real data |
+| `/tools` | ToolsScreen | All 9 dev tools in bento grid; FREQUENTLY USED buttons scroll to tool |
+| `/settings` | SettingsScreen | Chain selector (wired to useSwitchChain) + RPC override |
+| `/tiers` | redirect | → `/about` |
+| `/about` | AboutScreen | Project info, routes reference, shortcuts, tech stack |
 
 All page content components use `dynamic(..., { ssr: false })` (IndexedDB + wagmi).
 
-**Dead code (not imported anywhere — safe to delete)**: `HubLayout.tsx`, `LeftOutline.tsx`, `RightRail.tsx`, `StatusBar.tsx`, `HistorySidebar.tsx`  
-**Kept**: `CommandPalette.tsx` (mounted from `AppShell` TopNav ⌘K)
+**Kept**: `CommandPalette.tsx` (mounted from `AppShell` TopNav ⌘K), `ToolDrawer.tsx` (listens for `open-tool` events from ValueInspector)
 
 ## State Architecture
 
@@ -50,7 +53,7 @@ Used to cross context boundaries without prop drilling:
 
 | Event | Payload | Fired by | Handled by |
 |-------|---------|----------|-----------|
-| `open-tool` | `{ toolId: string }` | ValueInspector, CommandPalette, pipeline.prefill | ⚠ NO LISTENER — RightRail removed; piping is a no-op |
+| `open-tool` | `{ toolId: string }` | ValueInspector, CommandPalette, pipeline.prefill | ToolDrawer (mounted in AppShell) |
 | `load-contract` | `{ address, abi, name }` | CommandPalette (history select) | DashboardIntake |
 | `history-updated` | none | db.ts (addToHistory, deleteHistoryItem) | HistoryScreen |
 

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useChainId, useSwitchChain } from 'wagmi';
 import { AppShell } from '@/components/layout/AppShell';
+import { toast } from 'sonner';
 
 const CHAINS = [
     { id: 1, name: 'Ethereum Mainnet', symbol: 'ETH' },
@@ -21,6 +23,8 @@ const ENV_KEYS = [
 ];
 
 export default function SettingsScreen() {
+    const currentChainId = useChainId();
+    const { switchChain, isPending: isSwitching } = useSwitchChain();
     const [preferredChain, setPreferredChain] = useState<number>(1);
     const [rpcOverride, setRpcOverride] = useState('');
     const [saved, setSaved] = useState(false);
@@ -69,6 +73,16 @@ export default function SettingsScreen() {
         } else {
             localStorage.removeItem('rpc_override');
         }
+
+        if (preferredChain !== currentChainId) {
+            try {
+                switchChain({ chainId: preferredChain });
+                toast.success(`Switching to chain ${preferredChain} — approve in your wallet`);
+            } catch {
+                toast.error('Chain switch failed. You can switch manually in your wallet.');
+            }
+        }
+
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
     };
@@ -174,7 +188,7 @@ export default function SettingsScreen() {
                             saved ? 'bg-[#c3f400] text-[#161e00]' : 'bg-black text-white hover:bg-[#2b60ff]'
                         }`}
                     >
-                        {rpcValidating ? 'VALIDATING RPC…' : saved ? '✓ SAVED' : 'SAVE SETTINGS'}
+                        {isSwitching ? 'SWITCHING CHAIN…' : rpcValidating ? 'VALIDATING RPC…' : saved ? '✓ SAVED' : 'SAVE SETTINGS'}
                     </button>
                 </div>
 

@@ -1,8 +1,5 @@
-'use client';
-import dynamic from 'next/dynamic';
-
-const TiersScreen = dynamic(() => import('@/components/screens/TiersScreen'), { ssr: false });
+import { redirect } from 'next/navigation';
 
 export default function TiersPage() {
-    return <TiersScreen />;
+    redirect('/about');
 }

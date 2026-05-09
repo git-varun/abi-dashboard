@@ -6,6 +6,7 @@ import { SmartPastePill } from '@/components/inspector/SmartPastePill';
 import { inspect } from '@/lib/inspector';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { getAllHistory, type HistoryItem } from '@/lib/db';
 
 interface Props {
     onFetch: () => Promise<void>;
@@ -17,6 +18,19 @@ export const DashboardIntake = ({ onFetch, onGenerate }: Props) => {
     const { error, diagnostics } = useWorkspaceComputed();
     const [showPill, setShowPill] = useState(false);
     const [pillValue, setPillValue] = useState('');
+    const [recentImports, setRecentImports] = useState<HistoryItem[]>([]);
+
+    useEffect(() => {
+        getAllHistory()
+            .then(all => {
+                const visits = all
+                    .filter(i => i.type === 'contract_visit')
+                    .reverse()
+                    .slice(0, 5);
+                setRecentImports(visits);
+            })
+            .catch(() => {});
+    }, []);
 
     useEffect(() => {
         const handler = (e: Event) => {
@@ -195,45 +209,52 @@ export const DashboardIntake = ({ onFetch, onGenerate }: Props) => {
                             <h3 className="text-white uppercase font-black text-xl">Recent Imports</h3>
                             <span className="font-mono text-xs text-[#c3f400]">SESSION CACHE: 128KB</span>
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full border-collapse">
-                                <thead>
-                                    <tr className="border-b-4 border-black bg-[#e8e8e8]">
-                                        <th className="p-4 text-left text-xs font-black uppercase">Contract Alias</th>
-                                        <th className="p-4 text-left text-xs font-black uppercase">Address</th>
-                                        <th className="p-4 text-left text-xs font-black uppercase">Network</th>
-                                        <th className="p-4 text-left text-xs font-black uppercase">Status</th>
-                                        <th className="p-4 text-right text-xs font-black uppercase">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {[
-                                        { alias: 'UNISWAP_V3_FACTORY', address: '0x1F98431c8aD98523631AE4a59f267346ea31F984', network: 'MAINNET', active: true },
-                                        { alias: 'TREASURY_PROXY_OVM', address: '0x4200000000000000000000000000000000000006', network: 'OPTIMISM', active: true },
-                                        { alias: 'TEST_NFT_DROP', address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F', network: 'SEPOLIA', active: false },
-                                    ].map((row, i) => (
-                                        <tr key={i} className="border-b-2 border-black hover:bg-[#eeeeee] transition-colors">
-                                            <td className="p-4 font-bold">{row.alias}</td>
-                                            <td className="p-4 font-mono text-sm">{row.address}</td>
-                                            <td className="p-4">
-                                                <span className="bg-[#f3f3f3] border border-black px-2 py-1 text-xs font-black">{row.network}</span>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex items-center gap-1">
-                                                    <div className={`w-2 h-2 rounded-full ${row.active ? 'bg-[#c3f400]' : 'bg-[#ba1a1a]'}`}></div>
-                                                    <span className={`text-xs font-black uppercase ${row.active ? 'text-[#506600]' : 'text-[#ba1a1a]'}`}>
-                                                        {row.active ? 'ACTIVE' : 'EXPIRED'}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="p-4 text-right">
-                                                <button className="bg-black text-white px-4 py-1 text-xs font-black hover:bg-[#2b60ff] transition-all uppercase">LOAD</button>
-                                            </td>
+                        {recentImports.length === 0 ? (
+                            <div className="p-8 text-center text-[#737687] font-bold uppercase text-sm">
+                                No recent imports — load a contract above to get started.
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full border-collapse">
+                                    <thead>
+                                        <tr className="border-b-4 border-black bg-[#e8e8e8]">
+                                            <th className="p-4 text-left text-xs font-black uppercase">Contract Alias</th>
+                                            <th className="p-4 text-left text-xs font-black uppercase">Address</th>
+                                            <th className="p-4 text-left text-xs font-black uppercase">Chain</th>
+                                            <th className="p-4 text-left text-xs font-black uppercase">Visited</th>
+                                            <th className="p-4 text-right text-xs font-black uppercase">Actions</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody>
+                                        {recentImports.map((row, i) => (
+                                            <tr key={row.id ?? i} className="border-b-2 border-black hover:bg-[#eeeeee] transition-colors">
+                                                <td className="p-4 font-bold">{row.name || '—'}</td>
+                                                <td className="p-4 font-mono text-sm text-[#737687]">
+                                                    {row.address.slice(0, 10)}…{row.address.slice(-4)}
+                                                </td>
+                                                <td className="p-4">
+                                                    <span className="bg-[#f3f3f3] border border-black px-2 py-1 text-xs font-black">{row.chainId}</span>
+                                                </td>
+                                                <td className="p-4 text-xs text-[#737687] font-mono">
+                                                    {new Date(row.timestamp).toLocaleString()}
+                                                </td>
+                                                <td className="p-4 text-right">
+                                                    <button
+                                                        onClick={() => {
+                                                            dispatch({ type: 'SET_CONTRACT', address: row.address, abiInput: row.abi ?? '', contractName: row.name ?? '', isProxy: row.isProxy ?? false });
+                                                            toast.success('Contract loaded from history');
+                                                        }}
+                                                        className="bg-black text-white px-4 py-1 text-xs font-black hover:bg-[#2b60ff] transition-all uppercase"
+                                                    >
+                                                        LOAD
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </section>
                 </div>
             </div>
