@@ -14,7 +14,7 @@
 - **Don't call 4byte.directory from the server** — it's a public API with no key; call it client-side only.
 - **Chain configs live in `chain.ts` only** — no inline `Record<number, string>` maps for explorer URLs, chain names, or RPC subdomains anywhere else.
 - **History events must dispatch `history-updated`** — all db.ts write functions do this. Don't skip it or the UI won't refresh.
-- **Function cards must have `id="fn-{name}"`** — LeftOutline and CommandPalette scroll to functions using this. The DashboardExplorer wraps each card with this id.
+- **Function cards must have `id="fn-{name}"`** — SideNav and CommandPalette scroll to functions using this. The DashboardExplorer wraps each card with this id.
 
 ## Environment Variables
 

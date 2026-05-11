@@ -9,10 +9,21 @@ import { Button } from "@/components/ui/button";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import { useFunctionLogic } from "./hooks/useFunctionLogic";
 
-export function FunctionCard({ func, abi, address, isWrite }: any) {
+import { AbiEntry } from "@/hooks/useAbiParser";
+import { Address } from "viem";
+
+interface FunctionCardProps {
+    func: AbiEntry;
+    abi: AbiEntry[];
+    address: Address;
+    isWrite: boolean;
+}
+
+export function FunctionCard({ func, abi, address, isWrite }: FunctionCardProps) {
     const {
         inputs, setInputs, isLoading, isSimulating,
-        readData, hash, error, handleSimulate, handleAction, canExecute
+        readData, hash, error, handleSimulate, handleAction, canExecute,
+        isSuccess, isConfirming
     } = useFunctionLogic(func, abi, address, isWrite);
 
     return (
@@ -22,7 +33,7 @@ export function FunctionCard({ func, abi, address, isWrite }: any) {
                 : 'border-l-4 border-l-[#0046dd]'
         }`}>
             <CardHeader className={`py-3 px-4 ${isWrite ? 'bg-[#ffd7f5]' : 'bg-[#dde1ff]'}`}>
-                <CardHeaderContent name={func.name} isWrite={isWrite} isLoading={isLoading} />
+                <CardHeaderContent name={func.name || 'unnamed'} isWrite={isWrite} isLoading={isLoading} isSuccess={isSuccess} isConfirming={isConfirming} />
             </CardHeader>
 
             <CardContent className="px-4 pt-3 pb-2 bg-white">
@@ -35,7 +46,7 @@ export function FunctionCard({ func, abi, address, isWrite }: any) {
                 ) : (
                     <>
                         <CardInputs
-                            inputs={func.inputs}
+                            inputs={func.inputs || []}
                             onInputChange={(idx: number, val: string) => {
                                 const next = [...inputs];
                                 next[idx] = val;

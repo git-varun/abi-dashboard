@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from 'react';
 import { inspect } from '@/lib/inspector';
 import { usePipeline } from '@/store/pipeline';
 import { Sparkles, X, ArrowRight } from 'lucide-react';

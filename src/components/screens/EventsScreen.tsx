@@ -26,6 +26,8 @@ function formatArg(val: unknown): string {
     catch { return String(val); }
 }
 
+import { Log, type Abi } from 'viem';
+
 export default function EventsScreen() {
     const { state } = useWorkspace();
     const { parsedAbi } = useWorkspaceComputed();
@@ -53,18 +55,21 @@ export default function EventsScreen() {
 
         const unsub = publicClient.watchContractEvent({
             address: state.address as `0x${string}`,
-            abi: abiToWatch as any,
-            onLogs: (incoming: any[]) => {
-                const entries: LogEntry[] = incoming.map(log => ({
-                    id: `${log.transactionHash}-${log.logIndex}`,
-                    eventName: log.eventName ?? '?',
-                    args: Object.fromEntries(
-                        Object.entries(log.args ?? {}).map(([k, v]) => [k, formatArg(v)])
-                    ),
-                    blockNumber: log.blockNumber ?? 0n,
-                    transactionHash: log.transactionHash ?? '',
-                    timestamp: Date.now(),
-                }));
+            abi: abiToWatch as unknown as Abi, // Cast through unknown for compatibility
+            onLogs: (incoming: Log[]) => {
+                const entries: LogEntry[] = incoming.map(log => {
+                    const logWithProps = log as Log & { eventName?: string; args?: Record<string, unknown> };
+                    return {
+                        id: `${log.transactionHash}-${log.logIndex}`,
+                        eventName: logWithProps.eventName ?? '?',
+                        args: Object.fromEntries(
+                            Object.entries(logWithProps.args ?? {}).map(([k, v]) => [k, formatArg(v)])
+                        ),
+                        blockNumber: log.blockNumber ?? 0n,
+                        transactionHash: log.transactionHash ?? '',
+                        timestamp: Date.now(),
+                    };
+                });
                 setLogs(prev => [...entries, ...prev].slice(0, 200));
             },
         });

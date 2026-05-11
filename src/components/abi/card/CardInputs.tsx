@@ -4,8 +4,10 @@ import { Input } from "@/components/ui/input";
 import { useId, useState } from "react";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
+import { AbiParameter } from "@/hooks/useAbiParser";
+
 interface CardInputsProps {
-    inputs: any[];
+    inputs: AbiParameter[];
     onInputChange: (index: number, value: string) => void;
 }
 
@@ -54,7 +56,7 @@ export const CardInputs = ({ inputs, onInputChange }: CardInputsProps) => {
 
     return (
         <div className="space-y-5 pt-4">
-            {inputs.map((input: any, i: number) => {
+            {inputs.map((input: AbiParameter, i: number) => {
                 const id = `${baseId}-input-${i}`;
                 const type = input?.type || 'string';
                 const error = errors[i];

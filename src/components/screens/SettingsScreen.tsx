@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useChainId, useSwitchChain } from 'wagmi';
 import { AppShell } from '@/components/layout/AppShell';
 import { toast } from 'sonner';
@@ -25,18 +25,23 @@ const ENV_KEYS = [
 export default function SettingsScreen() {
     const currentChainId = useChainId();
     const { switchChain, isPending: isSwitching } = useSwitchChain();
-    const [preferredChain, setPreferredChain] = useState<number>(1);
-    const [rpcOverride, setRpcOverride] = useState('');
+    const [preferredChain, setPreferredChain] = useState<number>(() => {
+        if (typeof window !== 'undefined') {
+            const stored = localStorage.getItem('preferred_chain');
+            return stored ? Number(stored) : 1;
+        }
+        return 1;
+    });
+    const [rpcOverride, setRpcOverride] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('rpc_override') || '';
+        }
+        return '';
+    });
+
     const [saved, setSaved] = useState(false);
     const [rpcError, setRpcError] = useState('');
     const [rpcValidating, setRpcValidating] = useState(false);
-
-    useEffect(() => {
-        const stored = localStorage.getItem('preferred_chain');
-        if (stored) setPreferredChain(Number(stored));
-        const rpc = localStorage.getItem('rpc_override');
-        if (rpc) setRpcOverride(rpc);
-    }, []);
 
     const save = async () => {
         setRpcError('');

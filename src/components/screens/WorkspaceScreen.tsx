@@ -56,6 +56,31 @@ export default function WorkspaceScreen() {
                         </div>
                     </div>
 
+                    {/* Contract Metadata Bar */}
+                    <div className="bg-white border-2 border-black neo-shadow p-4 mb-6 flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex items-center gap-4 flex-wrap">
+                            <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[#2b60ff] text-lg">info</span>
+                                <div>
+                                    <p className="text-xs font-black uppercase text-subtle">Contract Info</p>
+                                    <p className="text-sm font-bold">{readFunctions.length + writeFunctions.length} functions • {state.isProxy ? '⚠ Upgradeable' : 'Non-upgradeable'}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 flex-wrap text-xs font-bold">
+                            {state.isProxy && (
+                                <span className="px-2 py-1 border border-orange-500 bg-orange-50 text-orange-700 uppercase">
+                                    <span className="material-symbols-outlined text-sm align-middle">warning</span>
+                                    Proxy Detected
+                                </span>
+                            )}
+                            <span className="px-2 py-1 border border-[#2b60ff] bg-[#dde1ff] text-[#001552] uppercase">
+                                <span className="material-symbols-outlined text-sm align-middle">verified</span>
+                                Ready to Interact
+                            </span>
+                        </div>
+                    </div>
+
                     <DashboardExplorer
                         readFunctions={readFunctions}
                         writeFunctions={writeFunctions}

@@ -1,13 +1,27 @@
 "use client";
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useChainId } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { CommandPalette } from './CommandPalette';
 import { ToolDrawer } from './ToolDrawer';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 
-const SIDE_NAV = [
+interface NavItem {
+    href: string;
+    label: string;
+    icon: string;
+    indent?: boolean;
+}
+
+interface NavSection {
+    section: string;
+    items: NavItem[];
+}
+
+const SIDE_NAV: NavSection[] = [
     {
         section: 'WORKBENCH',
         items: [
@@ -40,28 +54,69 @@ const SIDE_NAV = [
     },
 ];
 
+const CHAIN_DISPLAY: Record<number, { name: string; color: string }> = {
+    1: { name: 'Ethereum', color: 'bg-white text-black' },
+    137: { name: 'Polygon', color: 'bg-white text-black' },
+    42161: { name: 'Arbitrum', color: 'bg-white text-black' },
+    8453: { name: 'Base', color: 'bg-white text-black' },
+    10: { name: 'Optimism', color: 'bg-white text-black' },
+    56: { name: 'BSC', color: 'bg-white text-black' },
+    11155111: { name: 'Sepolia', color: 'bg-red-500 text-white border-red-600' },
+};
+
 export function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const chainId = useChainId();
     const { isOpen, open, close } = useCommandPalette();
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const isTestnet = chainId !== 1 && chainId !== 137 && chainId !== 42161 && chainId !== 8453 && chainId !== 10 && chainId !== 56;
 
     return (
         <div className="min-h-screen bg-[#f9f9f9]">
+            {/* Testnet Warning Banner */}
+            {isTestnet && (
+                <div className="fixed top-0 left-0 right-0 z-[60] bg-red-500 text-white py-2 border-b-2 border-black">
+                    <div className="px-6 flex items-center justify-center gap-2">
+                        <span className="material-symbols-outlined text-sm">warning</span>
+                        <span className="font-bold text-sm">⚠ TESTNET MODE — Write operations will cost testnet tokens.</span>
+                    </div>
+                </div>
+            )}
+            
             {/* Top Nav */}
-            <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-20 bg-white border-b-4 border-black neo-shadow">
+            <nav className={`fixed top-${isTestnet ? '10' : '0'} w-full z-50 flex justify-between items-center px-6 h-20 bg-white border-b-4 border-black neo-shadow`}>
                 <div className="flex items-center gap-4">
+                    {/* Mobile Hamburger */}
+                    <button
+                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                        className="md:hidden flex items-center justify-center w-10 h-10 border-2 border-black hover:bg-[#c3f400] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2b60ff]"
+                        aria-label="Toggle navigation menu"
+                        aria-expanded={sidebarOpen}
+                    >
+                        <span className="material-symbols-outlined">{sidebarOpen ? 'close' : 'menu'}</span>
+                    </button>
+
                     <Link href="/dashboard" className="text-2xl font-black text-black tracking-tighter uppercase hover:text-[#2B60FF] transition-colors">
                         ABI_WORKBENCH
                     </Link>
                     <span className="hidden md:block text-[#e2e2e2] font-bold select-none">|</span>
-                    <span className="hidden md:block text-xs font-bold uppercase text-[#737687] tracking-widest">
+                    <span className="hidden md:block text-xs font-bold uppercase text-subtle tracking-widest">
                         {pathname.replace('/', '').toUpperCase() || 'DASHBOARD'}
                     </span>
                 </div>
                 <div className="flex items-center gap-4">
+                    {/* Network Indicator */}
+                    <div className={`hidden sm:flex items-center gap-2 px-3 py-2 border-2 border-black font-bold text-xs uppercase ${CHAIN_DISPLAY[chainId]?.color || 'bg-gray-100'}`}>
+                        <span className="material-symbols-outlined text-sm">hub</span>
+                        {CHAIN_DISPLAY[chainId]?.name || `Chain ${chainId}`}
+                    </div>
+                    
+                    {/* Search Button */}
                     <button
                         onClick={open}
-                        className="hidden sm:flex items-center gap-2 px-4 py-2 border-2 border-black neo-shadow bg-white hover:bg-[#c3f400] transition-colors font-bold text-sm uppercase"
+                        className="hidden sm:flex items-center gap-2 px-4 py-2 border-2 border-black neo-shadow bg-white hover:bg-[#c3f400] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2b60ff] transition-colors font-bold text-sm uppercase"
                         title="Search (⌘K)"
+                        aria-label="Open search (⌘K)"
                     >
                         <span className="material-symbols-outlined text-[18px]">search</span>
                         <kbd className="font-mono text-xs">⌘K</kbd>
@@ -70,29 +125,40 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
             </nav>
 
+            {/* Mobile Overlay */}
+            {sidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 z-[39] md:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
+
             {/* Side Nav */}
-            <aside className="fixed left-0 top-20 w-64 h-[calc(100vh-80px)] flex flex-col border-r-4 border-black bg-white z-40">
+            <aside className={`fixed left-0 top-[calc(80px+${isTestnet ? '40px' : '0px'})] w-64 h-[calc(100vh-80px${isTestnet ? '-40px' : ''})] flex flex-col border-r-4 border-black bg-white z-40 transition-transform duration-300 md:translate-x-0 ${
+                sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+            }`}>
                 <div className="flex-1 overflow-y-auto py-4 space-y-6">
                     {SIDE_NAV.map(group => (
                         <div key={group.section}>
-                            <p className="px-5 mb-1 text-[10px] font-black uppercase tracking-widest text-[#737687]">
+                            <p className="px-5 mb-1 text-[10px] font-black uppercase tracking-widest text-subtle">
                                 {group.section}
                             </p>
                             <div className="space-y-0.5">
                                 {group.items.map(item => {
                                     const active = pathname === item.href;
-                                    const indented = (item as any).indent;
+                                    const indented = item.indent;
                                     return (
                                         <Link
                                             key={item.href}
                                             href={item.href}
+                                            onClick={() => setSidebarOpen(false)}
                                             className={`flex items-center gap-3 py-2.5 font-bold uppercase transition-all ${
                                                 indented ? 'pl-10 pr-3' : 'px-3 mx-2'
                                             } ${
                                                 active
                                                     ? 'bg-[#CCFF00] text-black border-2 border-black neo-shadow'
-                                                    : 'text-black hover:bg-[#2B60FF] hover:text-white'
-                                            } ${indented && !active ? 'text-[#737687]' : ''}`}
+                                                    : 'text-black hover:bg-[#2B60FF] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2b60ff]'
+                                            } ${indented && !active ? 'text-subtle' : ''}`}
                                         >
                                             <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
                                             <span className={indented ? 'text-xs' : 'text-sm'}>{item.label}</span>
@@ -108,7 +174,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <div className="p-4 border-t-4 border-black">
                     <Link
                         href="/workspace"
-                        className="block w-full bg-[#c3f400] text-[#161e00] border-2 border-black neo-shadow py-4 font-bold uppercase tracking-widest text-center hover:bg-[#abd600] active:translate-y-1 active:shadow-none transition-all"
+                        className="block w-full bg-[#c3f400] text-[#161e00] border-2 border-black neo-shadow py-4 font-bold uppercase tracking-widest text-center hover:bg-[#abd600] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2b60ff] active:translate-y-1 active:shadow-none transition-all"
                     >
                         LOAD CONTRACT
                     </Link>
@@ -116,7 +182,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </aside>
 
             {/* Main Content */}
-            <main className="ml-64 mt-20 p-8 min-h-[calc(100vh-80px)] bg-[#f9f9f9]">
+            <main className="ml-0 mt-20 md:ml-64 md:mt-20 p-4 md:p-8 min-h-[calc(100vh-80px)] bg-[#f9f9f9]">
                 {children}
             </main>
 

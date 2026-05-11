@@ -45,7 +45,7 @@ export async function addToHistory(item: Omit<HistoryItem, 'id' | 'timestamp'>) 
         );
         if (existing) {
             // preserve pinned state across re-visits
-            (item as any).pinned = existing.pinned ?? false;
+            item.pinned = existing.pinned ?? false;
             await store.delete(existing.id);
         }
     } else if (item.hash) {

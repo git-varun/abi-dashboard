@@ -60,8 +60,7 @@ src/
     layout/
       AppShell.tsx        ← Full shell: TopNav (fixed h-20) + SideNav (fixed w-64) + main
       CommandPalette.tsx  ← ⌘K overlay: search tools, functions, history
-      HubLayout.tsx       ← DEAD CODE — superseded by AppShell; safe to delete
-      LeftOutline.tsx     ← DEAD CODE — superseded by SideNav in AppShell; safe to delete
+      ToolDrawer.tsx      ← Tool overlay (drawer)
     screens/
       DashboardScreen.tsx  ← System overview, live IndexedDB metrics, session log
       WorkspaceScreen.tsx  ← Unified intake + DashboardExplorer (inline when contract loaded)
@@ -95,7 +94,6 @@ src/
       DashboardExplorer.tsx ← Read/Write tabs grid; function cards with id="fn-{name}"
       card/index.tsx      ← FunctionCard: inputs + simulate + execute + output
       card/hooks/useFunctionLogic.tsx ← Core write/read/simulate logic per function
-      HistorySidebar.tsx  ← DEAD CODE — LeftOutline removed; safe to delete
 ```
 
 ---

@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useWorkspaceComputed } from '@/store/workspace';
-import { getAllHistory } from '@/lib/db';
+import { HistoryItem, getAllHistory } from '@/lib/db';
 import { TOOLS } from '@/components/tools/registry';
 import { Search, Zap, FileCode, Clock, ArrowRight } from 'lucide-react';
+import { AbiEntry } from '@/hooks/useAbiParser';
 
 type ResultType = 'tool' | 'read' | 'write' | 'history';
 
@@ -18,7 +19,7 @@ type Result = {
 
 function useResults(query: string, onClose: () => void): Result[] {
     const { readFunctions, writeFunctions } = useWorkspaceComputed();
-    const [historyItems, setHistoryItems] = useState<any[]>([]);
+    const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
 
     useEffect(() => {
         getAllHistory().then(h => setHistoryItems(h.filter(i => i.type === 'contract_visit'))).catch(() => {});
@@ -37,9 +38,9 @@ function useResults(query: string, onClose: () => void): Result[] {
         }));
 
     const reads: Result[] = (readFunctions ?? [])
-        .filter(f => !q || f.name?.toLowerCase().includes(q))
+        .filter((f: AbiEntry) => !q || f.name?.toLowerCase().includes(q))
         .slice(0, 5)
-        .map(f => ({
+        .map((f: AbiEntry) => ({
             id: `read-${f.name}`,
             type: 'read' as ResultType,
             label: f.name ?? '',
@@ -48,9 +49,9 @@ function useResults(query: string, onClose: () => void): Result[] {
         }));
 
     const writes: Result[] = (writeFunctions ?? [])
-        .filter(f => !q || f.name?.toLowerCase().includes(q))
+        .filter((f: AbiEntry) => !q || f.name?.toLowerCase().includes(q))
         .slice(0, 5)
-        .map(f => ({
+        .map((f: AbiEntry) => ({
             id: `write-${f.name}`,
             type: 'write' as ResultType,
             label: f.name ?? '',
@@ -80,13 +81,6 @@ const TYPE_ICON: Record<ResultType, React.ComponentType<{ className?: string }>>
     history: Clock,
 };
 
-const TYPE_COLOR: Record<ResultType, string> = {
-    tool: 'text-blue-400',
-    read: 'text-blue-400',
-    write: 'text-orange-400',
-    history: 'text-zinc-500',
-};
-
 export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
     const [query, setQuery] = useState('');
     const [selected, setSelected] = useState(0);
@@ -94,7 +88,15 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
     const results = useResults(query, onClose);
 
     useEffect(() => {
-        if (isOpen) { setQuery(''); setSelected(0); setTimeout(() => inputRef.current?.focus(), 50); }
+        if (isOpen) {
+            // Use setTimeout to avoid synchronous setState during render/effect cascade warning
+            const timer = setTimeout(() => {
+                setQuery('');
+                setSelected(0);
+                inputRef.current?.focus();
+            }, 50);
+            return () => clearTimeout(timer);
+        }
     }, [isOpen]);
 
     const handleKeydown = useCallback((e: React.KeyboardEvent) => {

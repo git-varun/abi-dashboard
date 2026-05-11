@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { formatUnits, parseUnits } from 'viem';
 import { Copy, Check } from 'lucide-react';
 
@@ -20,28 +20,34 @@ export function TokenFormatter({ prefilled }: Props) {
     const [decimals, setDecimals] = useState('18');
     const [copied, setCopied] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (prefilled != null) {
-            const s = String(prefilled);
-            if (/^\d+$/.test(s)) { setRaw(s); syncFromRaw(s, decimals); }
-        }
-    }, [prefilled]);
-
-    const syncFromRaw = (r: string, d: string) => {
+    const syncFromRaw = useCallback((r: string, d: string) => {
         try {
             const dec = parseInt(d, 10);
             if (isNaN(dec) || !r) { setHuman(''); return; }
             setHuman(formatUnits(BigInt(r), dec));
         } catch { setHuman(''); }
-    };
+    }, []);
 
-    const syncFromHuman = (h: string, d: string) => {
+    const syncFromHuman = useCallback((h: string, d: string) => {
         try {
             const dec = parseInt(d, 10);
             if (isNaN(dec) || !h) { setRaw(''); return; }
             setRaw(parseUnits(h, dec).toString());
         } catch { setRaw(''); }
-    };
+    }, []);
+
+    useEffect(() => {
+        if (prefilled != null) {
+            const s = String(prefilled);
+            if (/^\d+$/.test(s)) {
+                const timer = setTimeout(() => {
+                    setRaw(s);
+                    syncFromRaw(s, decimals);
+                }, 50);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [prefilled, decimals, syncFromRaw]);
 
     const copy = async (text: string, key: string) => {
         try { await navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 1500); } catch { /* ignore */ }

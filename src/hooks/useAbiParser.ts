@@ -1,10 +1,17 @@
 import { useMemo } from "react";
 
+export interface AbiParameter {
+  name: string;
+  type: string;
+  internalType?: string;
+  components?: AbiParameter[];
+}
+
 export interface AbiEntry {
   type: string;
   name?: string;
-  inputs?: any[];
-  outputs?: any[];
+  inputs?: AbiParameter[];
+  outputs?: AbiParameter[];
   stateMutability?: string;
   constant?: boolean;
   payable?: boolean;
@@ -22,13 +29,13 @@ export interface AbiParseResult {
 /**
  * Normalizes legacy and edge-case ABIs into a modern, standard format.
  */
-export const normalizeAbiEntry = (item: any, index: number): AbiEntry | null => {
+export const normalizeAbiEntry = (item: unknown, index: number): AbiEntry | null => {
   // Edge Case: Completely null or non-object entries in the array
   if (!item || typeof item !== "object") return null;
 
   // Edge Case: Handling non-function types (Events, Errors, Fallbacks)
   // We keep them in parsedAbi but exclude them from our UI function lists later
-  const entry: AbiEntry = { ...item };
+  const entry: AbiEntry = { ...(item as AbiEntry) };
 
   if (entry.type === "function") {
     // 1. Name Validation: Critical for UI mapping
@@ -37,7 +44,7 @@ export const normalizeAbiEntry = (item: any, index: number): AbiEntry | null => 
     }
 
     // 2. Input Normalization: Handle unnamed inputs (common in old ERC20s)
-    entry.inputs = (entry.inputs || []).map((input: any, i: number) => ({
+    entry.inputs = (entry.inputs || []).map((input: AbiParameter, i: number) => ({
       ...input,
       name: input.name || `arg${i}`,
       type: input.type || "uint256", // Defaulting to avoid crash, though usually indicates bad ABI
@@ -64,24 +71,32 @@ export function useAbiParser(rawAbi: string): AbiParseResult {
       return { parsedAbi: null, readFunctions: [], writeFunctions: [], error: null };
     }
 
-    let parsed: any[];
+    let parsed: unknown[];
 
     // 2. JSON Parsing with try/catch
     try {
       const data = JSON.parse(trimmed);
       // Handle the "Etherscan result wrapper" edge case:
       // sometimes users paste the whole {status, message, result} object
-      parsed = Array.isArray(data) ? data : (data.result && Array.isArray(JSON.parse(data.result)) ? JSON.parse(data.result) : data);
+      if (Array.isArray(data)) {
+        parsed = data;
+      } else if (data && typeof data === 'object' && 'result' in data && typeof data.result === 'string') {
+        const inner = JSON.parse(data.result);
+        parsed = Array.isArray(inner) ? inner : data;
+      } else {
+        parsed = data;
+      }
 
       if (!Array.isArray(parsed)) {
         throw new Error("ABI must be a JSON array");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
       return {
         parsedAbi: null,
         readFunctions: [],
         writeFunctions: [],
-        error: err.message.includes("Unexpected token") ? "Invalid JSON: Check for trailing commas or hidden characters" : err.message
+        error: message.includes("Unexpected token") ? "Invalid JSON: Check for trailing commas or hidden characters" : message
       };
     }
 

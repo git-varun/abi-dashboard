@@ -1,5 +1,5 @@
 import { createPublicClient, http, Address, formatUnits } from 'viem';
-import { SUPPORTED_CHAINS, getExplorerTxUrl } from './chain';
+import { SUPPORTED_CHAINS } from './chain';
 
 function getChain(chainId: number) {
     return SUPPORTED_CHAINS.find(c => c.id === chainId) ?? SUPPORTED_CHAINS[0];
@@ -43,12 +43,18 @@ export async function simulateTransaction(
         };
     } catch (error: unknown) {
         let errorMessage = 'Execution Reverted';
-        const err = error as any;
-        if (err?.walk) {
-            const root = err.walk((e: any) => e.data?.name || e.shortMessage);
+        if (error && typeof error === 'object' && 'walk' in error && typeof error.walk === 'function') {
+            const err = error as { walk: (cb: (e: unknown) => unknown) => unknown, shortMessage?: string };
+            const root = err.walk((e: unknown) => {
+                const errObj = e as Record<string, unknown>;
+                const data = errObj?.data as Record<string, unknown> | undefined;
+                return data?.name || errObj?.shortMessage;
+            }) as (Record<string, unknown> & { data?: { name?: string } }) | null;
+            
             if (root?.data?.name) errorMessage = root.data.name;
             else if (err.shortMessage) errorMessage = err.shortMessage.split('\n')[0];
         }
-        return { success: false, reason: errorMessage || String(err?.message ?? error), tenderlyUrl };
+        const finalMessage = error instanceof Error ? error.message : String(error);
+        return { success: false, reason: errorMessage || finalMessage, tenderlyUrl };
     }
 }

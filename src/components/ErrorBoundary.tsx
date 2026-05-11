@@ -1,7 +1,7 @@
 import React from 'react';
 
 export class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
-  constructor(props: any) {
+  constructor(props: {children: React.ReactNode}) {
     super(props);
     this.state = { hasError: false };
   }
@@ -10,7 +10,7 @@ export class ErrorBoundary extends React.Component<{children: React.ReactNode}, 
     return { hasError: true };
   }
 
-  componentDidCatch(error: any, info: any) {
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
      
     console.error('ErrorBoundary caught', error, info);
   }

@@ -11,7 +11,10 @@ export function AddressChecksum({ prefilled }: Props) {
     const [copied, setCopied] = useState<string | null>(null);
 
     useEffect(() => {
-        if (prefilled) setInput(String(prefilled));
+        if (prefilled) {
+            const timer = setTimeout(() => setInput(String(prefilled)), 50);
+            return () => clearTimeout(timer);
+        }
     }, [prefilled]);
 
     const copy = async (text: string, key: string) => {

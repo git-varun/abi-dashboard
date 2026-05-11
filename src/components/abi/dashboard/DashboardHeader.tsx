@@ -3,7 +3,7 @@
 import { useWorkspace } from '@/store/workspace';
 import { useWorkspaceComputed } from '@/store/workspace';
 import { useChainId, useAccount } from 'wagmi';
-import { getChainName, getExplorerAddressUrl } from '@/lib/chain';
+import { getExplorerAddressUrl } from '@/lib/chain';
 import { ShieldAlert, ExternalLink, AlertTriangle } from 'lucide-react';
 
 export const DashboardHeader = () => {

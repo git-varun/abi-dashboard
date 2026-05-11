@@ -8,23 +8,18 @@ import {
     useWaitForTransactionReceipt,
     useReadContract
 } from "wagmi";
-import { Address } from "viem";
+import { Address, type Abi } from "viem";
 import { toast } from "sonner";
 import { addToHistory } from "@/lib/db";
 import { simulateTransaction } from "@/lib/simulate";
 import { getNativePriceInINR } from "@/lib/prices";
 import {Button} from "@/components/ui/button";
 
-// Define the shape of the ABI function for typing
-interface AbiFunction {
-    name: string;
-    inputs: Array<{ name: string; type: string }>;
-    stateMutability: string;
-}
+import { AbiEntry, AbiParameter } from "@/hooks/useAbiParser";
 
 export function useFunctionLogic(
-    func: AbiFunction,
-    abi: any[],
+    func: AbiEntry,
+    abi: AbiEntry[],
     address: Address,
     isWrite: boolean
 ) {
@@ -44,12 +39,13 @@ export function useFunctionLogic(
 
     // 1. Hook Definitions
     const { writeContract, data: hash, error: writeError, isPending: isWriting } = useWriteContract();
-    const { isLoading: isConfirming, isSuccess, isError: isConfirmError } = useWaitForTransactionReceipt({ hash });
+    const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
     // 2. Argument Parsing Utility
-    const getParsedArgs = useCallback((): any[] => {
-        return inputs.map((val, i) => {
-            const type = func.inputs[i]?.type;
+    const getParsedArgs = useCallback((): unknown[] => {
+        return (func.inputs || []).map((input, i) => {
+            const val = inputs[i];
+            const type = input.type;
 
             // Treat empty inputs as undefined so read calls use defaults
             if (val === undefined || val === null || String(val).trim() === '') return undefined;
@@ -70,13 +66,14 @@ export function useFunctionLogic(
 
                 // fallback for arrays/tuples: attempt JSON.parse
                 if (type?.includes('[') && typeof val === 'string' && (val.trim().startsWith('[') || val.trim().startsWith('{'))) {
-                    try { return JSON.parse(val); } catch (_) { return val; }
+                    try { return JSON.parse(val); } catch { return val; }
                 }
 
                 return val;
             } catch (e) {
+                const message = e instanceof Error ? e.message : String(e);
                 // If parsing fails, bubble up via toast and return undefined
-                toast.error(`Argument parse error for ${func.name}: ${String((e as any)?.message || e)}`);
+                toast.error(`Argument parse error for ${func.name}: ${message}`);
                 return undefined;
             }
         });
@@ -108,7 +105,7 @@ export function useFunctionLogic(
         const result = await simulateTransaction(
             address,
             abi,
-            func.name,
+            func.name || 'unnamed',
             getParsedArgs(),
             userAddress,
             chainId
@@ -170,13 +167,13 @@ export function useFunctionLogic(
 
                 writeContract({
                     address,
-                    abi,
-                    functionName: func.name,
-                    args,
+                    abi: abi as unknown as Abi, // Cast through unknown for wagmi compatibility
+                    functionName: func.name as string,
+                    args: args as unknown as readonly unknown[],
                 });
             } else {
                 // Validate required arguments for read calls
-                const missing = func.inputs?.some((inp: any, idx: number) => {
+                const missing = (func.inputs || []).some((inp: AbiParameter, idx: number) => {
                     const val = args[idx];
                     // If an input is required and value is undefined/null/empty string, mark missing
                     return (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) && inp && inp.type;
@@ -191,6 +188,7 @@ export function useFunctionLogic(
             }
         } catch (err) {
             toast.error("Argument Error: Ensure numbers and addresses are valid.");
+            const message = err instanceof Error ? err.message : String(err);
             // Save failed attempt
             addToHistory({
                 type: 'transaction',
@@ -198,7 +196,7 @@ export function useFunctionLogic(
                 name: `Tx: ${func.name}`,
                 chainId,
                 status: 'failed',
-                error: String((err as any)?.message || err)
+                error: message
             }).catch(() => {});
         }
     };
@@ -237,7 +235,7 @@ export function useFunctionLogic(
         const problems: string[] = [];
         const args = inputs;
 
-        func.inputs?.forEach((inp: any, idx: number) => {
+        (func.inputs || []).forEach((inp: AbiParameter, idx: number) => {
             const raw = args[idx];
             const type = inp?.type || '';
 
@@ -248,7 +246,7 @@ export function useFunctionLogic(
             }
 
             if (type.includes('int')) {
-                try { BigInt(String(raw)); } catch (e) { problems.push(`Invalid integer for ${inp.name || idx}`); }
+                try { BigInt(String(raw)); } catch { problems.push(`Invalid integer for ${inp.name || idx}`); }
             }
 
             if (type === 'address') {
@@ -261,7 +259,7 @@ export function useFunctionLogic(
             }
 
             if ((type.includes('[') || type.startsWith('tuple')) && typeof raw === 'string') {
-                try { JSON.parse(raw); } catch (e) { problems.push(`Invalid JSON for ${inp.name || idx}`); }
+                try { JSON.parse(raw); } catch { problems.push(`Invalid JSON for ${inp.name || idx}`); }
             }
         });
 
@@ -276,6 +274,8 @@ export function useFunctionLogic(
         setInputs,
         isLoading,
         isSimulating,
+        isSuccess,
+        isConfirming,
         readData,
         hash,
         error: readError || writeError,

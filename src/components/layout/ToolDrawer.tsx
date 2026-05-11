@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { findTool } from '@/components/tools/registry';
 import { usePipeline } from '@/store/pipeline';
@@ -25,7 +25,10 @@ export function ToolDrawer() {
     const [prefilled, setPrefilled] = useState<unknown>(null);
     const { consume } = usePipeline();
     const consumeRef = useRef(consume);
-    consumeRef.current = consume;
+    
+    useEffect(() => {
+        consumeRef.current = consume;
+    }, [consume]);
 
     useEffect(() => {
         const handler = (e: Event) => {
@@ -39,17 +42,17 @@ export function ToolDrawer() {
         return () => window.removeEventListener('open-tool', handler);
     }, []);
 
+    const close = useCallback(() => {
+        setIsOpen(false);
+        setPrefilled(null);
+    }, []);
+
     useEffect(() => {
         if (!isOpen) return;
         const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [isOpen]);
-
-    function close() {
-        setIsOpen(false);
-        setPrefilled(null);
-    }
+    }, [isOpen, close]);
 
     const tool = activeToolId ? findTool(activeToolId) : null;
     const ToolComponent = activeToolId ? TOOL_COMPONENTS[activeToolId] : null;

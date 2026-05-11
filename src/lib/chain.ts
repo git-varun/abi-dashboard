@@ -1,5 +1,8 @@
 import { mainnet, polygon, sepolia, arbitrum, base, optimism, bsc } from 'wagmi/chains';
 
+/**
+ * Legacy EVM chain exports (maintained for backward compatibility)
+ */
 export const SUPPORTED_CHAINS = [mainnet, polygon, arbitrum, base, optimism, bsc, sepolia];
 
 export const CHAIN_NAMES: Record<number, string> = {
@@ -71,3 +74,9 @@ export function getAlchemySubdomain(chainId: number): string {
 export function getChainName(chainId: number): string {
     return CHAIN_NAMES[chainId] ?? `Chain ${chainId}`;
 }
+
+/**
+ * NEW: Chain-agnostic exports (use ChainAdapter for both EVM + Solana)
+ */
+export { ChainAdapter, chainAdapter } from './chain-adapter';
+export type { ChainConfig, ChainType } from './chain-adapter';

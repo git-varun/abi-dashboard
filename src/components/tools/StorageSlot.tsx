@@ -31,8 +31,9 @@ export function StorageSlot() {
                 const index = BigInt(arrayIndex);
                 return { result: toHex(BigInt(arrayBase) + index, { size: 32 }), error: '' };
             }
-        } catch (e: any) {
-            return { result: '', error: e?.message ?? 'Computation failed' };
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'Computation failed';
+            return { result: '', error: message };
         }
         return { result: '', error: '' };
     })();

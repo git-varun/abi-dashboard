@@ -79,6 +79,16 @@
         font-family: 'Space Grotesk', sans-serif;
     }
 
+    /* Accessibility: Focus indicators for all interactive elements */
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    a:focus-visible {
+        outline: 2px solid #2b60ff;
+        outline-offset: 2px;
+    }
+
     /* Smooth scrollbar */
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -113,6 +123,16 @@
         background-color: #c3f400;
         color: #161e00;
     }
+
+    /* Accessibility: Better contrast text */
+    .text-subtle { color: #555555; } /* #737687 → #555555 for WCAG AA */
+    .text-terminal { color: #e6ff00; } /* #c3f400 → #e6ff00 for terminal readability on dark bg */
+    
+    /* Accessible status badges with text + color */
+    .badge-success { @apply px-2 py-0.5 text-[10px] font-black border border-black bg-[#c3f400] text-[#161e00]; }
+    .badge-error { @apply px-2 py-0.5 text-[10px] font-black border border-black bg-[#ffdad6] text-[#93000a]; }
+    .badge-pending { @apply px-2 py-0.5 text-[10px] font-black border border-black bg-[#e2e2e2] text-[#161e00]; }
+    .badge-visit { @apply px-2 py-0.5 text-[10px] font-black border border-black bg-[#b7c4ff] text-[#001552]; }
 }
 
 /* Shimmer animation for Generate button */

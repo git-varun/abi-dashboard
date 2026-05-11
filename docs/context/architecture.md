@@ -70,6 +70,6 @@ Etherscan V2 (server action) ──→ workspace.abiInput
                                         ↓
                         WorkspaceComputedContext
                           ↙              ↘
-                LeftOutline          DashboardExplorer
+                SideNav              DashboardExplorer
              (function index)        (function cards)
 ```

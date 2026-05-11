@@ -48,6 +48,7 @@ if (rpcOverride && preferredChain) {
 export const config = getDefaultConfig({
     appName: 'ABI Workbench',
     projectId: WALLET_CONNECT_PROJECT_ID ?? '',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     chains: SUPPORTED_CHAINS as any,
     ssr: true,
     ...(preferredChain ? { initialChain: preferredChain } : {}),

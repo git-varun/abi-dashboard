@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import Link from 'next/link';
 import { getAllHistory, getPinnedContracts, togglePin, type HistoryItem } from '@/lib/db';
@@ -9,18 +9,23 @@ export default function DashboardScreen() {
     const [pinnedContracts, setPinnedContracts] = useState<HistoryItem[]>([]);
     const [recentHistory, setRecentHistory] = useState<HistoryItem[]>([]);
 
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         const [pinned, all] = await Promise.all([getPinnedContracts(), getAllHistory()]);
         setPinnedContracts(pinned);
         setRecentHistory([...all].reverse().slice(0, 10));
-    };
+    }, []);
 
     useEffect(() => {
-        loadData().catch(console.error);
-        const handler = () => loadData().catch(console.error);
+        const timer = setTimeout(() => {
+            loadData().catch(console.error);
+        }, 50);
+        const handler = () => { loadData().catch(console.error); };
         window.addEventListener('history-updated', handler);
-        return () => window.removeEventListener('history-updated', handler);
-    }, []);
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('history-updated', handler);
+        };
+    }, [loadData]);
 
     return (
         <AppShell>
@@ -42,10 +47,10 @@ export default function DashboardScreen() {
                     </div>
                 </div>
 
-                {/* Metric Cards */}
+                {/* Metric Cards — Simplified (3 key metrics only) */}
                 <div className="col-span-12 lg:col-span-4 bg-white border-2 border-black neo-shadow p-6 flex flex-col justify-between group hover:bg-[#2b60ff] hover:text-white transition-all cursor-default">
                     <div className="flex justify-between items-start">
-                        <span className="text-xs font-bold uppercase text-[#737687] group-hover:text-[#dde1ff]">CONTRACTS VISITED</span>
+                        <span className="text-xs font-bold uppercase text-subtle group-hover:text-[#dde1ff]">CONTRACTS LOADED</span>
                         <span className="material-symbols-outlined">history_edu</span>
                     </div>
                     <div className="mt-8">
@@ -59,28 +64,28 @@ export default function DashboardScreen() {
 
                 <div className="col-span-12 lg:col-span-4 bg-white border-2 border-black neo-shadow p-6 flex flex-col justify-between group hover:bg-[#c3f400] hover:text-black transition-all cursor-default">
                     <div className="flex justify-between items-start">
-                        <span className="text-xs font-bold uppercase text-[#737687]">TRANSACTIONS</span>
+                        <span className="text-xs font-bold uppercase text-subtle">SIMULATIONS</span>
                         <span className="material-symbols-outlined">receipt_long</span>
                     </div>
                     <div className="mt-8">
                         <span className="text-4xl font-black">{recentHistory.filter(i => i.type === 'transaction').length}</span>
                         <div className="flex items-center gap-2 text-[#0046dd] font-bold mt-2">
                             <span className="material-symbols-outlined text-sm">bolt</span>
-                            <span>RECENT HISTORY</span>
+                            <span>TX HISTORY</span>
                         </div>
                     </div>
                 </div>
 
-                <div className="col-span-12 lg:col-span-4 bg-white border-2 border-black neo-shadow p-6 flex flex-col justify-between group hover:bg-[#c600c6] hover:text-white transition-all cursor-default">
+                <div className="col-span-12 lg:col-span-4 bg-white border-2 border-black neo-shadow p-6 flex flex-col justify-between group hover:bg-[#0046dd] hover:text-white transition-all cursor-default">
                     <div className="flex justify-between items-start">
-                        <span className="text-xs font-bold uppercase text-[#737687] group-hover:text-[#ffd7f5]">PINNED</span>
-                        <span className="material-symbols-outlined">push_pin</span>
+                        <span className="text-xs font-bold uppercase text-subtle group-hover:text-[#b7c4ff]">SAVED CONTRACTS</span>
+                        <span className="material-symbols-outlined">bookmark</span>
                     </div>
                     <div className="mt-8">
                         <span className="text-4xl font-black">{pinnedContracts.length}</span>
                         <div className="flex items-center gap-2 font-bold mt-2 group-hover:text-white">
-                            <span className="material-symbols-outlined text-sm">bookmark</span>
-                            <span>CONTRACTS PINNED</span>
+                            <span className="material-symbols-outlined text-sm">pin</span>
+                            <span>PINNED</span>
                         </div>
                     </div>
                 </div>
@@ -103,13 +108,13 @@ export default function DashboardScreen() {
                             {recentHistory.map((item, i) => (
                                 <div key={item.id ?? i} className="p-4 flex items-center justify-between gap-4 hover:bg-[#f3f3f3] transition-colors">
                                     <div className="flex items-center gap-3 min-w-0">
-                                        <span className={`shrink-0 px-2 py-0.5 text-[10px] font-black border border-black uppercase ${item.type === 'contract_visit' ? 'bg-[#b7c4ff]' : item.status === 'success' ? 'bg-[#c3f400]' : item.status === 'failed' ? 'bg-[#ffdad6] text-[#93000a]' : 'bg-[#e2e2e2]'}`}>
+                                        <span className={`shrink-0 px-2 py-0.5 text-[10px] font-black border border-black uppercase ${item.type === 'contract_visit' ? 'badge-visit' : item.status === 'success' ? 'badge-success' : item.status === 'failed' ? 'badge-error' : 'badge-pending'}`}>
                                             {item.type === 'contract_visit' ? 'VISIT' : item.status?.toUpperCase() ?? 'TX'}
                                         </span>
                                         <span className="font-bold truncate">{item.name || item.address}</span>
-                                        <span className="font-mono text-xs text-[#737687] hidden sm:block shrink-0">{item.address.slice(0, 8)}…{item.address.slice(-4)}</span>
+                                        <span className="font-mono text-xs text-subtle hidden sm:block shrink-0">{item.address.slice(0, 8)}…{item.address.slice(-4)}</span>
                                     </div>
-                                    <span className="shrink-0 text-[10px] font-bold text-[#737687] uppercase">{new Date(item.timestamp).toLocaleTimeString()}</span>
+                                    <span className="shrink-0 text-[10px] font-bold text-subtle uppercase">{new Date(item.timestamp).toLocaleTimeString()}</span>
                                 </div>
                             ))}
                         </div>
@@ -121,7 +126,7 @@ export default function DashboardScreen() {
                     <div className="p-4 border-b-2 border-[#333] flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-[#c3f400] animate-pulse"></div>
-                            <span className="text-[#c3f400] font-mono text-sm uppercase">SESSION_LOG</span>
+                            <span className="text-terminal font-mono text-sm uppercase">SESSION_LOG</span>
                         </div>
                         <span className="text-[#666] font-mono text-xs">{recentHistory.length} EVENTS</span>
                     </div>
@@ -129,7 +134,7 @@ export default function DashboardScreen() {
                         {recentHistory.length === 0 ? (
                             <p className="text-[#555]">&gt; AWAITING_EVENTS…</p>
                         ) : recentHistory.map((item, i) => (
-                            <p key={item.id ?? i} className={item.type === 'transaction' && item.status === 'failed' ? 'text-[#ba1a1a]' : 'text-[#c3f400]'}>
+                            <p key={item.id ?? i} className={item.type === 'transaction' && item.status === 'failed' ? 'text-[#ba1a1a]' : 'text-terminal'}>
                                 <span className="text-[#555]">[{new Date(item.timestamp).toLocaleTimeString('en-US', { hour12: false })}]</span>
                                 {' '}&gt; {item.type === 'contract_visit' ? `CONTRACT_LOADED: ${item.name || item.address}` : `TX_${item.status?.toUpperCase()}: ${item.hash?.slice(0, 10) ?? item.address}`}
                             </p>
@@ -168,12 +173,12 @@ export default function DashboardScreen() {
                                     {pinnedContracts.map((c, i) => (
                                         <tr key={c.id ?? i} className="border-b-2 border-black hover:bg-[#e8e8e8] transition-colors">
                                             <td className="p-4 border-r-2 border-black font-bold">{c.name || '—'}</td>
-                                            <td className="p-4 border-r-2 border-black font-mono text-sm text-[#737687]">{c.address.slice(0, 10)}…{c.address.slice(-4)}</td>
+                                            <td className="p-4 border-r-2 border-black font-mono text-sm text-subtle">{c.address.slice(0, 10)}…{c.address.slice(-4)}</td>
                                             <td className="p-4 border-r-2 border-black font-bold text-xs">{c.chainId}</td>
                                             <td className="p-4">
                                                 <button
                                                     onClick={() => togglePin(c.address)}
-                                                    className="px-2 py-1 text-[10px] font-black border border-black bg-[#c3f400] hover:bg-[#ffdad6] uppercase transition-colors"
+                                                    className="px-2 py-1 text-[10px] font-black border border-black bg-[#c3f400] hover:bg-[#ffdad6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2b60ff] uppercase transition-colors"
                                                 >
                                                     UNPIN
                                                 </button>

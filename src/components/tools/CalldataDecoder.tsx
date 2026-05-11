@@ -1,16 +1,14 @@
 "use client";
 
 import { useState } from 'react';
-import { decodeFunctionData } from 'viem';
-import { useWorkspace } from '@/store/workspace';
+import { decodeFunctionData, type Abi } from 'viem';
 import { useWorkspaceComputed } from '@/store/workspace';
 import { Copy, Check, AlertCircle } from 'lucide-react';
 
 export function CalldataDecoder() {
-    const { state } = useWorkspace();
     const { parsedAbi } = useWorkspaceComputed();
     const [calldata, setCalldata] = useState('');
-    const [result, setResult] = useState<{ functionName: string; args: readonly unknown[] } | null>(null);
+    const [result, setResult] = useState<{ functionName: string; args?: readonly unknown[] } | null>(null);
     const [error, setError] = useState('');
     const [copied, setCopied] = useState(false);
 
@@ -20,10 +18,11 @@ export function CalldataDecoder() {
         const abi = parsedAbi ?? [];
         if (abi.length === 0) { setError('Load a contract ABI first to decode calldata'); return; }
         try {
-            const decoded = decodeFunctionData({ abi, data: calldata as `0x${string}` });
-            setResult(decoded as any);
-        } catch (e: any) {
-            setError(e?.message?.split('\n')[0] ?? 'Decoding failed — ABI mismatch?');
+            const decoded = decodeFunctionData({ abi: abi as unknown as Abi, data: calldata as `0x${string}` });
+            setResult(decoded);
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : String(e);
+            setError(message.split('\n')[0] ?? 'Decoding failed — ABI mismatch?');
         }
     };
 

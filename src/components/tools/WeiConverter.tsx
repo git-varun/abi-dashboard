@@ -36,7 +36,10 @@ export function WeiConverter({ prefilled }: Props) {
             const s = String(prefilled);
             const wei = safeParse(s, 0);
             if (wei !== null) {
-                setInputs({ Wei: s, Gwei: safeFormat(wei, 9), ETH: safeFormat(wei, 18) });
+                const timer = setTimeout(() => {
+                    setInputs({ Wei: s, Gwei: safeFormat(wei, 9), ETH: safeFormat(wei, 18) });
+                }, 50);
+                return () => clearTimeout(timer);
             }
         }
     }, [prefilled]);

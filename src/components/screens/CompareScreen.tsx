@@ -2,16 +2,16 @@
 
 import { useState, useMemo } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
-import { useAbiParser, type AbiEntry } from '@/hooks/useAbiParser';
+import { useAbiParser, type AbiEntry, type AbiParameter } from '@/hooks/useAbiParser';
 
 // Canonical signature keyed by type:name(inputTypes) — handles overloads correctly
 function canonicalSig(entry: AbiEntry): string {
-    const types = (entry.inputs ?? []).map((i: any) => i.type).join(',');
+    const types = (entry.inputs ?? []).map((i: AbiParameter) => i.type).join(',');
     return `${entry.type}:${entry.name ?? ''}(${types})`;
 }
 
 function humanSig(entry: AbiEntry): string {
-    const types = (entry.inputs ?? []).map((i: any) => i.type).join(', ');
+    const types = (entry.inputs ?? []).map((i: AbiParameter) => i.type).join(', ');
     return `${entry.name ?? entry.type}(${types})`;
 }
 

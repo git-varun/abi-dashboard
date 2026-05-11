@@ -7,8 +7,9 @@ import { useWorkspace, useWorkspaceComputed } from '@/store/workspace';
 import { DashboardIntake } from '@/components/abi/dashboard/DashboardIntake';
 import { useContractLoader } from '@/hooks/useContractLoader';
 import { simulateTransaction } from '@/lib/simulate';
+import { TestnetWarningModal } from '@/components/ui/TestnetWarningModal';
 import type { Address } from 'viem';
-import type { AbiEntry } from '@/hooks/useAbiParser';
+import type { AbiEntry, AbiParameter } from '@/hooks/useAbiParser';
 
 type LogLine = { time: string; text: string; color: string };
 
@@ -31,6 +32,19 @@ export default function DebuggerScreen() {
     const [simulating, setSimulating] = useState(false);
     const [gasResult, setGasResult] = useState<{ low: string; standard: string; fast: string } | null>(null);
     const [simSuccess, setSimSuccess] = useState<boolean | null>(null);
+    const [testnetWarningOpen, setTestnetWarningOpen] = useState(false);
+    const [testnetConfirmed, setTestnetConfirmed] = useState(false);
+
+    const CHAIN_NAMES: Record<number, string> = {
+        1: 'Ethereum Mainnet',
+        137: 'Polygon',
+        42161: 'Arbitrum One',
+        8453: 'Base',
+        10: 'Optimism',
+        56: 'BNB Smart Chain',
+        11155111: 'Sepolia Testnet',
+    };
+    const isTestnet = chainId !== 1 && chainId !== 137 && chainId !== 42161 && chainId !== 8453 && chainId !== 10 && chainId !== 56;
 
     const addLog = (text: string, color = 'text-[#c3f400]') =>
         setLogs(prev => [...prev, { time: timestamp(), text, color }]);
@@ -45,6 +59,13 @@ export default function DebuggerScreen() {
 
     const handleSimulate = async () => {
         if (!selectedFn || !selectedFn.name || !state.address || !userAddress) return;
+
+        // Check for testnet and require confirmation
+        if (isTestnet && !testnetConfirmed) {
+            setTestnetWarningOpen(true);
+            return;
+        }
+
         setSimulating(true);
         setGasResult(null);
         setSimSuccess(null);
@@ -52,7 +73,7 @@ export default function DebuggerScreen() {
         addLog(`> TARGET: ${state.address}`, 'text-[#737687]');
         addLog(`> METHOD: ${selectedFn.name}`, 'text-[#737687]');
 
-        const parsedArgs = (selectedFn.inputs ?? []).map((inp: any) => args[inp.name ?? inp.type] ?? '');
+        const parsedArgs = (selectedFn.inputs ?? []).map((inp: AbiParameter) => args[inp.name ?? inp.type] ?? '');
 
         try {
             const result = await simulateTransaction(
@@ -79,9 +100,10 @@ export default function DebuggerScreen() {
                 setSimSuccess(false);
                 addLog(`> SIMULATION FAILED: ${result.reason}`, 'text-[#ba1a1a]');
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             setSimSuccess(false);
-            addLog(`> ERROR: ${e?.message ?? 'Unknown error'}`, 'text-[#ba1a1a]');
+            const message = e instanceof Error ? e.message : 'Unknown error';
+            addLog(`> ERROR: ${message}`, 'text-[#ba1a1a]');
         } finally {
             setSimulating(false);
         }
@@ -222,13 +244,30 @@ export default function DebuggerScreen() {
                                 {selectedFn ? `METHOD: ${selectedFn.name}` : 'SELECT A FUNCTION'}
                             </span>
                         </div>
+                        
+                        {/* Pre-Simulation Gas Estimate Banner */}
+                        {selectedFn && !gasResult && (
+                            <div className="bg-[#e6ff00] border-b-2 border-black p-4">
+                                <div className="flex items-center gap-2 justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-[#0046dd] text-lg">local_gas_station</span>
+                                        <div>
+                                            <p className="text-xs font-black uppercase text-[#0046dd]">Estimated Gas</p>
+                                            <p className="text-sm font-bold text-black">~2-3M gas • Run simulation for exact cost</p>
+                                        </div>
+                                    </div>
+                                    <span className="text-[10px] font-black text-[#0046dd] uppercase">TBD</span>
+                                </div>
+                            </div>
+                        )}
+                        
                         <div className="p-6 space-y-4">
                             {!selectedFn ? (
                                 <p className="text-xs text-[#737687] uppercase font-bold">← Choose a write function from the list.</p>
                             ) : (selectedFn.inputs ?? []).length === 0 ? (
                                 <p className="text-xs text-[#737687] uppercase font-bold">No inputs required.</p>
                             ) : (
-                                (selectedFn.inputs ?? []).map((inp: any) => (
+                                (selectedFn.inputs ?? []).map((inp: AbiParameter) => (
                                     <div key={inp.name ?? inp.type} className="space-y-1">
                                         <label className="text-xs font-black uppercase text-[#737687]">{inp.name ?? inp.type} ({inp.type})</label>
                                         <input
@@ -321,6 +360,23 @@ export default function DebuggerScreen() {
                     )}
                 </div>
             </div>
+
+            {/* Testnet Warning Modal */}
+            <TestnetWarningModal
+                isOpen={testnetWarningOpen}
+                onConfirm={() => {
+                    setTestnetConfirmed(true);
+                    setTestnetWarningOpen(false);
+                    // Trigger simulation after confirmation
+                    setTimeout(() => handleSimulate(), 100);
+                }}
+                onCancel={() => {
+                    setTestnetWarningOpen(false);
+                    setTestnetConfirmed(false);
+                }}
+                chainName={CHAIN_NAMES[chainId] || `Chain ${chainId}`}
+                action="simulate a transaction"
+            />
         </AppShell>
     );
 }

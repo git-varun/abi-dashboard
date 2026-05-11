@@ -12,7 +12,10 @@ export function TimestampConverter({ prefilled }: Props) {
     useEffect(() => {
         if (prefilled != null) {
             const s = String(prefilled);
-            if (/^\d+$/.test(s)) setUnix(s);
+            if (/^\d+$/.test(s)) {
+                const timer = setTimeout(() => setUnix(s), 50);
+                return () => clearTimeout(timer);
+            }
         }
     }, [prefilled]);
 
